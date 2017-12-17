@@ -1,19 +1,19 @@
+import '../util/flatmap'
 
 type ScopeContext = {
   _context: TraverseState
 } & TraverseState['scope']
-type ContextToString = (context : ScopeContext) => ASTResolvedExpression
+type ScopeContextToAST<T = any> = (context : ScopeContext) => ASTResolvedExpression<T>
 
 interface ASTObject<T = any> {
   type: ASTType
   data: T
   reduce: (context: TraverseState) => TraverseState
   parts?: Array<ASTExpression>
-  // children?: Array<ASTExpression>
-  // toString?: () => string,
 }
-type ASTResolvedExpression = string | ASTObject | Array<string | ASTObject>
-type ASTExpression = ContextToString | ASTResolvedExpression
+
+type ASTResolvedExpression<T = any> = string | ASTObject<T> | Array<string | ASTObject>
+type ASTExpression = ScopeContextToAST | ASTResolvedExpression
 type ASTList = Array<ASTExpression>
 
 type ASTType =
@@ -73,7 +73,6 @@ function terminatorReduce(this: ASTObject<NoData>, context: TraverseState): Trav
   const commentText = `# ${comments.map(({data: {comment: text}}) => text).join(' | ')}`
 
   return {
-    // @ts-ignore blocked on Microsoft/TypeScript/pull/13288
     ...context,
     processed: [...processed, this],
     parts: comments.length
@@ -113,12 +112,91 @@ const combineAlternate = <T, Y>(
       )
     : combineAlternate(arr2, arr1, true, true)
 
+// const prepareStatement = (nodes: Array<string | ASTObject>) => nodes
+//   .filter(node => !isPureText(node) || node.length > 0)
+//   .map(coerceStringToAST)
+//   .concat(terminator)
+
+// const resolvedStatement = (
+//   strings: TemplateStringsArray,
+//   ...parts: Array<ASTResolvedExpression>
+// ) =>
+//   prepareStatement(
+//     combineAlternate(
+//       Array.from(strings),
+//       parts.flatten(1) as Array<string | ASTObject>
+//     )
+//   )
+
+// const a = astGroup()
+
+// const flattenObjectsReducer = (
+//   strings: TemplateStringsArray,
+//   ...parts: Array<ASTResolvedExpression>
+// ) => (context: TraverseState) => ensureASTObject(
+//   combineAlternate(Array.from(strings), parts.map((part) => ensureASTObject(part, context)))
+//     .filter(node => !isPureText(node) || node.length > 0)
+//     .map(coerceStringToAST)
+//     .concat(terminator),
+//   context,
+// )
+
+// const flattenedObjects = defineReducer({
+//   reducer: flattenObjectsReducer(),
+//   data:
+// })
+
+    // const x = [].flatMap(())
+// const flattenPossible
+// .map((part) => ensureASTObject(part))
+
+// const statement = (
+//   strings: TemplateStringsArray,
+//   ...parts: Array<ASTObject<any> | string>,
+// ) => combineAlternate(Array.from(strings), parts)
+//   .filter(node => !isPureText(node) || node.length > 0)
+//   .map(coerceStringToAST)
+//   .concat(terminator)
+
+const astGroup = (...children: ASTList): ASTObject<{children: ASTList}> => ({
+  type: 'group',
+  data: {children},
+  reduce: function reduce(context: TraverseState): TraverseState {
+    return reduceAST(children, context)
+  },
+})
+
+/**
+ * Template string for creating AST from nodes/strings and functions
+ */
+const ast = (
+  strings: TemplateStringsArray,
+  ...parts: Array<ASTExpression>,
+): Array<ASTObject> => (
+  parts.every(part => typeof part !== 'function')
+    ? combineAlternate(
+        Array.from(strings),
+        parts.flatten(1) as Array<string | ASTObject>
+      )
+      .filter(node => !isPureText(node) || node.length > 0)
+      .map(coerceStringToAST)
+    : [
+      astGroup(
+        ({_context: context}) => ensureASTObject(
+          combineAlternate(
+            Array.from(strings).map(coerceStringToAST),
+            parts.map((part) => ensureASTObject(part, context))
+          ),
+          context,
+        )
+      )
+    ]
+  )
+
 const statement = (
   strings: TemplateStringsArray,
-  ...parts: Array<ASTObject<any> | string>,
-) => combineAlternate(Array.from(strings), parts)
-  .map(coerceStringToAST)
-  .concat(terminator)
+  ...parts: Array<ASTExpression>,
+): Array<ASTObject> => ast(strings, ...parts).concat(terminator)
 
 // const x = statement`declare ${variable}=${initializer}`
 
@@ -128,7 +206,6 @@ const statement = (
 
 function defaultReduce(this: ASTObject, context: TraverseState): TraverseState {
   const {processed, ...nextContext} = reduceAST(this.parts || [], context)
-  // @ts-ignore blocked on Microsoft/TypeScript/pull/13288
   return {
     ...nextContext,
     processed: [...processed, this],
@@ -150,7 +227,7 @@ const defineReducer = <T>({reducer, data}: {
 const addToScope = (name: string) => defineReducer({
   data: {name},
   reducer: ({scope, parts, ...context}: TraverseState): TraverseState => {
-    let safeName: string = name
+    let safeName = name
     let append = 0
     while (safeName in scope) {
       append++
@@ -162,7 +239,7 @@ const addToScope = (name: string) => defineReducer({
       parts: [...parts, safeName],
       scope: {
         ...scope,
-        [name]: {...scope.parent, toString: () => safeName},
+        [name]: {...scope.parent, toString: () => safeName, length: safeName.length},
       },
     }
   },
@@ -188,6 +265,15 @@ const declareVariable = (
   initializer,
 )
 
+const declareFunction = ({name, body}: {name: string, body: ASTExpression}) => ({
+  type: 'function',
+  parts: statement`function ${name} {
+${body}
+}`
+})
+
+const ex = statement`declare ${({name}) => name}`
+
 const lazy = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
   type: 'lazy',
   data: reduce.data,
@@ -212,16 +298,11 @@ const scopeHelper = (context : TraverseState) => ({
   _context: context,
 } as ScopeContext)
 
-const coerceStringToAST = <T>(textOrAST: ASTObject<T> | string) =>
-  typeof textOrAST === 'string' ? raw(textOrAST) : textOrAST
+const isPureText = (textOrAST: ASTObject | string): textOrAST is string =>
+  typeof textOrAST === 'string' || textOrAST.hasOwnProperty('toString')
 
-const astGroup = (...children: Array<ASTObject>): ASTObject<{children: Array<ASTObject>}> => ({
-  type: 'group',
-  data: {children},
-  reduce: function reduce(context: TraverseState): TraverseState {
-    return reduceAST(children, context)
-  },
-})
+const coerceStringToAST = <T>(textOrAST: ASTObject<T> | string) =>
+  isPureText(textOrAST) ? raw(textOrAST) : textOrAST
 
 const ensureASTObject = (node : ASTExpression, context : TraverseState): ASTObject =>
   Array.isArray(node)
@@ -240,7 +321,7 @@ interface TraverseState {
   scopePath: Array<string>
   parent: ASTObject
   scope: {
-    [variableName: string]: ASTObject & {toString(): string},
+    [variableName: string]: ASTObject & {toString(): string, length: number},
   }
 }
 
@@ -316,6 +397,16 @@ describe('writer', () => {
     ).toMatchSnapshot()
   })
 
+  test('conflicting variable names are renamed', () => {
+    expect(
+      print([
+        declareVariable('example'),
+        ({example}) => statement`echo ${example}`,
+        declareVariable('example'),
+        ({example}) => statement`echo ${example}`, // will be example_1
+      ])
+    ).toMatchSnapshot()
+  })
 })
 
 describe('ast', () => {
@@ -323,6 +414,46 @@ describe('ast', () => {
     expect(
       reduceAST([comment('testing')])
     ).toMatchSnapshot()
+  })
+
+  describe('ensureASTObject', () => {
+    test('[] => group', () => {
+      expect(
+        ensureASTObject([], emptyContext)
+      ).toHaveProperty('type', 'group')
+    })
+    test('[text] => group with one raw node', () => {
+      const result = ensureASTObject(['text'], emptyContext)
+      expect(result).toHaveProperty('type', 'group')
+      expect(result.data).toHaveProperty('children')
+      expect(result.data.children).toHaveLength(1)
+      expect(result.data.children[0]).toHaveProperty('type', 'raw')
+    })
+    test('text => one raw node', () => {
+      const result = ensureASTObject('text', emptyContext)
+      expect(result).toHaveProperty('type', 'raw')
+      expect(result.data).toHaveProperty('text')
+      expect(result.data.text).toBe('text')
+    })
+    test('() => [text] => group with one raw node', () => {
+      const result = ensureASTObject(() => ['text'], emptyContext)
+      expect(result).toHaveProperty('type', 'group')
+      expect(result.data).toHaveProperty('children')
+      expect(result.data.children).toHaveLength(1)
+      expect(result.data.children[0]).toHaveProperty('type', 'raw')
+    })
+    test('() => text => one raw node', () => {
+      const result = ensureASTObject(() => 'text', emptyContext)
+      expect(result).toHaveProperty('type', 'raw')
+      expect(result.data).toHaveProperty('text')
+      expect(result.data.text).toBe('text')
+    })
+    test('() => statement => 2 nodes', () => {
+      const result = ensureASTObject(() => statement`text`, emptyContext)
+      expect(result).toHaveProperty('type', 'group')
+      expect(result.data).toHaveProperty('children')
+      expect(result.data.children).toHaveLength(2)
+    })
   })
 })
 

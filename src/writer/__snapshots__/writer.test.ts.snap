@@ -54,8 +54,22 @@ exports[`writer comment 1`] = `
 "
 `;
 
+exports[`writer conflicting variable names are renamed 1`] = `
+"declare example
+echo example
+declare example_1
+echo example_1
+"
+`;
+
 exports[`writer declaration 1`] = `
 "declare hello=test
+"
+`;
+
+exports[`writer scope is populated by variables 1`] = `
+"declare example
+echo example
 "
 `;
 
