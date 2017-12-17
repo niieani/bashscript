@@ -1,0 +1,75 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ast comment 1`] = `
+Object {
+  "parent": Object {
+    "data": Object {},
+    "reduce": [Function],
+    "type": "root",
+  },
+  "parts": Array [
+    "#testing",
+    "
+",
+  ],
+  "processed": Array [
+    Object {
+      "data": Object {
+        "text": "#testing",
+      },
+      "parts": Array [
+        "#testing",
+      ],
+      "reduce": [Function],
+      "type": "raw",
+    },
+    Object {
+      "data": Object {},
+      "reduce": [Function],
+      "type": "terminator",
+    },
+    Object {
+      "data": Object {
+        "comment": "testing",
+      },
+      "parts": Array [
+        "#testing",
+        Object {
+          "data": Object {},
+          "reduce": [Function],
+          "type": "terminator",
+        },
+      ],
+      "reduce": [Function],
+      "type": "comment",
+    },
+  ],
+  "scope": Object {},
+  "scopePath": Array [],
+}
+`;
+
+exports[`writer comment 1`] = `
+"#testing
+"
+`;
+
+exports[`writer declaration 1`] = `
+"declare hello=test
+"
+`;
+
+exports[`writer statement 1`] = `
+"echo test
+"
+`;
+
+exports[`writer statement with raw 1`] = `
+"echo raw test
+"
+`;
+
+exports[`writer terminator 1`] = `
+"
+"
+`;
