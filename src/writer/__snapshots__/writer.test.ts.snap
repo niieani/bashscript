@@ -2,6 +2,7 @@
 
 exports[`ast comment 1`] = `
 Object {
+  "indent": 0,
   "parent": Object {
     "data": Object {},
     "reduce": [Function],

@@ -28,14 +28,14 @@ type ASTType =
   | 'group'
 
 // ? do we mark start of content flow (terminated by \n) vs inline content (a; b;)?
-const starter: ASTObject = {
+const starter: ASTObject<NoData> = {
   type: 'starter',
   data: {},
-  reduce(context) {
-    const {processed, parts} = context
+  reduce(context): TraverseState {
+    const {processed, parts, indent} = context
     return {
-      // @ts-ignore blocked on Microsoft/TypeScript/pull/13288
       ...context,
+      parts: indent ? [...parts, ''.padStart(indent)] : parts,
       processed: [...processed, this],
     }
   }
@@ -320,6 +320,7 @@ interface TraverseState {
   processed: Array<ASTObject>
   scopePath: Array<string>
   parent: ASTObject
+  indent: number,
   scope: {
     [variableName: string]: ASTObject & {toString(): string, length: number},
   }
@@ -333,6 +334,7 @@ const astRoot: ASTObject<NoData> = {
 
 const emptyContext: TraverseState = {
   parts: [], processed: [], scopePath: [], scope: {}, parent: astRoot,
+  indent: 0,
 }
 
 const reduceAST = (ast : ASTList, context : TraverseState = emptyContext): TraverseState =>
