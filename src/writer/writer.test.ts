@@ -13,7 +13,7 @@ interface ASTObject<T = any> {
 }
 
 type ASTResolvedExpression<T = any> = string | ASTObject<T> | Array<string | ASTObject>
-type ASTExpression = ScopeContextToAST | ASTResolvedExpression
+type ASTExpression = ScopeContextToAST | ASTResolvedExpression | Array<ScopeContextToAST | ASTResolvedExpression>
 type ASTList = Array<ASTExpression>
 
 type ASTType =
@@ -24,8 +24,9 @@ type ASTType =
   | 'raw'
   | 'terminator'
   | 'starter'
-  | 'lazy'
+  | 'enhance'
   | 'group'
+  | 'function'
 
 // ? do we mark start of content flow (terminated by \n) vs inline content (a; b;)?
 const starter: ASTObject<NoData> = {
@@ -86,10 +87,10 @@ const terminator : ASTObject<NoData> = ({
   reduce: terminatorReduce,
 })
 
-const comment = (comment : string): ASTObject<{comment: string}> => ({
+const comment = (comment : string, withSpace = true): ASTObject<{comment: string}> => ({
   reduce: defaultReduce,
   type: 'comment',
-  parts: [`#${comment}`, terminator],
+  parts: [`#${withSpace ? ' ' : ''}${comment}`, terminator],
   data: {comment},
 })
 
@@ -112,52 +113,6 @@ const combineAlternate = <T, Y>(
       )
     : combineAlternate(arr2, arr1, true, true)
 
-// const prepareStatement = (nodes: Array<string | ASTObject>) => nodes
-//   .filter(node => !isPureText(node) || node.length > 0)
-//   .map(coerceStringToAST)
-//   .concat(terminator)
-
-// const resolvedStatement = (
-//   strings: TemplateStringsArray,
-//   ...parts: Array<ASTResolvedExpression>
-// ) =>
-//   prepareStatement(
-//     combineAlternate(
-//       Array.from(strings),
-//       parts.flatten(1) as Array<string | ASTObject>
-//     )
-//   )
-
-// const a = astGroup()
-
-// const flattenObjectsReducer = (
-//   strings: TemplateStringsArray,
-//   ...parts: Array<ASTResolvedExpression>
-// ) => (context: TraverseState) => ensureASTObject(
-//   combineAlternate(Array.from(strings), parts.map((part) => ensureASTObject(part, context)))
-//     .filter(node => !isPureText(node) || node.length > 0)
-//     .map(coerceStringToAST)
-//     .concat(terminator),
-//   context,
-// )
-
-// const flattenedObjects = defineReducer({
-//   reducer: flattenObjectsReducer(),
-//   data:
-// })
-
-    // const x = [].flatMap(())
-// const flattenPossible
-// .map((part) => ensureASTObject(part))
-
-// const statement = (
-//   strings: TemplateStringsArray,
-//   ...parts: Array<ASTObject<any> | string>,
-// ) => combineAlternate(Array.from(strings), parts)
-//   .filter(node => !isPureText(node) || node.length > 0)
-//   .map(coerceStringToAST)
-//   .concat(terminator)
-
 const astGroup = (...children: ASTList): ASTObject<{children: ASTList}> => ({
   type: 'group',
   data: {children},
@@ -178,7 +133,7 @@ const ast = (
         Array.from(strings),
         parts.flatten(1) as Array<string | ASTObject>
       )
-      .filter(node => !isPureText(node) || node.length > 0)
+      .filter(node => !shouldTreatAsPureText(node) || node.length > 0)
       .map(coerceStringToAST)
     : [
       astGroup(
@@ -196,9 +151,16 @@ const ast = (
 const statement = (
   strings: TemplateStringsArray,
   ...parts: Array<ASTExpression>,
-): Array<ASTObject> => ast(strings, ...parts).concat(terminator)
-
-// const x = statement`declare ${variable}=${initializer}`
+): Array<ASTObject> => {
+  const applied = ast(strings, ...parts)
+  const [first, ...rest] = applied
+  const [last] = rest.reverse()
+  return [
+    ...(first && first.type !== 'starter' ? [starter] : []),
+    ...applied,
+    ...(last && last.type !== 'terminator' ? [terminator] : []),
+  ]
+}
 
 // comment helper:
 // _COMMENT_=
@@ -224,6 +186,9 @@ const defineReducer = <T>({reducer, data}: {
   data: T,
 }) => Object.assign(reducer, {data})
 
+/**
+ * adds a variable to scope and prints its name
+ */
 const addToScope = (name: string) => defineReducer({
   data: {name},
   reducer: ({scope, parts, ...context}: TraverseState): TraverseState => {
@@ -261,21 +226,49 @@ const declareVariable = (
   name : string,
   initializer? : ASTObject<any>,
 ): ASTObject<DeclarationData> => declare(
-  lazy(addToScope(name)),
+  enhance(addToScope(name)),
   initializer,
 )
 
-const declareFunction = ({name, body}: {name: string, body: ASTExpression}) => ({
+const inIsolatedScope = (body: ASTExpression, scopeDescription: string) => defineReducer({
+  reducer: (context) => {
+    const {
+      indent, processed, scope, scopePath, parent, partsToExtract, parts
+    } = context
+    const innerContext = reduceAST(
+      [body],
+      {
+        indent: indent + 2,
+        scope,
+        scopePath: [...scopePath, scopeDescription],
+        processed: [],
+        parts: [],
+        partsToExtract: [],
+        parent,
+      }
+    )
+    return {
+      ...context,
+      partsToExtract: [...partsToExtract, ...innerContext.partsToExtract],
+      parts: [...parts, ...innerContext.parts],
+      processed: [...processed, parent, ...innerContext.processed],
+    }
+  },
+  data: {scopeDescription, body},
+})
+
+type FunctionAST = {name: string, body: ASTExpression}
+const declareFunction = ({name, body}: FunctionAST): ASTObject<FunctionAST> => ({
   type: 'function',
-  parts: statement`function ${name} {
-${body}
+  data: {name, body},
+  reduce: defaultReduce,
+  parts: statement`function ${enhance(addToScope(name))} {
+${enhance(inIsolatedScope(body, name))}
 }`
 })
 
-const ex = statement`declare ${({name}) => name}`
-
-const lazy = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
-  type: 'lazy',
+const enhance = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
+  type: 'enhance',
   data: reduce.data,
   reduce,
 })
@@ -298,15 +291,15 @@ const scopeHelper = (context : TraverseState) => ({
   _context: context,
 } as ScopeContext)
 
-const isPureText = (textOrAST: ASTObject | string): textOrAST is string =>
+const shouldTreatAsPureText = (textOrAST: ASTObject | string): textOrAST is string =>
   typeof textOrAST === 'string' || textOrAST.hasOwnProperty('toString')
 
 const coerceStringToAST = <T>(textOrAST: ASTObject<T> | string) =>
-  isPureText(textOrAST) ? raw(textOrAST) : textOrAST
+  shouldTreatAsPureText(textOrAST) ? raw(textOrAST) : textOrAST
 
 const ensureASTObject = (node : ASTExpression, context : TraverseState): ASTObject =>
   Array.isArray(node)
-    ? astGroup(...node.map(coerceStringToAST))
+    ? astGroup(...node.flatten(100).map(coerceStringToAST))
     : typeof node === 'function'
       ? ensureASTObject(node(scopeHelper(context)), context)
       : coerceStringToAST(node)
@@ -317,6 +310,7 @@ const ensureASTObject = (node : ASTExpression, context : TraverseState): ASTObje
 
 interface TraverseState {
   parts: Array<string>
+  partsToExtract: Array<string>
   processed: Array<ASTObject>
   scopePath: Array<string>
   parent: ASTObject
@@ -333,17 +327,26 @@ const astRoot: ASTObject<NoData> = {
 }
 
 const emptyContext: TraverseState = {
-  parts: [], processed: [], scopePath: [], scope: {}, parent: astRoot,
+  parts: [],
+  partsToExtract: [],
+  processed: [],
+  scopePath: [],
+  scope: {},
+  parent: astRoot,
   indent: 0,
 }
 
-const reduceAST = (ast : ASTList, context : TraverseState = emptyContext): TraverseState =>
+const reduceAST = (ast : ASTList, {parent: astParent, ...context} : TraverseState = emptyContext): TraverseState =>
   ast.reduce(
-    (context : TraverseState, node) => ensureASTObject(
-      node,
-      context,
-    ).reduce(context),
-    context
+    (context : TraverseState, node) => {
+      const parent = ensureASTObject(
+        node,
+        context,
+      )
+      const newContext = parent.reduce({...context, parent})
+      return {...newContext, parent: astParent}
+    },
+    {...context, parent: astParent}
   )
 
 const print = (ast : ASTList, context : TraverseState = emptyContext) =>
@@ -406,6 +409,32 @@ describe('writer', () => {
         ({example}) => statement`echo ${example}`,
         declareVariable('example'),
         ({example}) => statement`echo ${example}`, // will be example_1
+      ])
+    ).toMatchSnapshot()
+  })
+
+  test('function declaration', () => {
+    expect(
+      print([
+        declareFunction({
+          name: 'example',
+          body: statement`echo "this is awesome"`,
+        }),
+      ])
+    ).toMatchSnapshot()
+  })
+
+  test('access the AST type of declared function', () => {
+    expect(
+      print([
+        declareFunction({
+          name: 'setMood',
+          body: [
+            declareVariable('itIs', raw('good')),
+            comment('this will be a recursive call'),
+            ({setMood}) => statement`${setMood} "awesome, because it's a ${setMood.type}"`,
+          ],
+        }),
       ])
     ).toMatchSnapshot()
   })

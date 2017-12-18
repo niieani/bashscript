@@ -9,17 +9,18 @@ Object {
     "type": "root",
   },
   "parts": Array [
-    "#testing",
+    "# testing",
     "
 ",
   ],
+  "partsToExtract": Array [],
   "processed": Array [
     Object {
       "data": Object {
-        "text": "#testing",
+        "text": "# testing",
       },
       "parts": Array [
-        "#testing",
+        "# testing",
       ],
       "reduce": [Function],
       "type": "raw",
@@ -34,7 +35,7 @@ Object {
         "comment": "testing",
       },
       "parts": Array [
-        "#testing",
+        "# testing",
         Object {
           "data": Object {},
           "reduce": [Function],
@@ -51,7 +52,7 @@ Object {
 `;
 
 exports[`writer comment 1`] = `
-"#testing
+"# testing
 "
 `;
 
@@ -68,16 +69,20 @@ exports[`writer declaration 1`] = `
 "
 `;
 
+exports[`writer function declaration 1`] = `
+"function example {
+  echo \\"this is awesome\\"
+}
+"
+`;
+
 exports[`writer scope is populated by variables 1`] = `
 "declare example
 echo example
 "
 `;
 
-exports[`writer statement 1`] = `
-"echo test
-"
-`;
+exports[`writer statement 1`] = `"echo test"`;
 
 exports[`writer statement with raw 1`] = `
 "echo raw test
