@@ -5,7 +5,7 @@ import * as acorn from 'acorn'
 
 const ast = new Ast()
 const sourceDir = path.resolve(__dirname, '..', 'bashscript')
-ast.addSourceFiles(`${sourceDir}/example/**/*.ts`)
+ast.addExistingSourceFiles(`${sourceDir}/example/**/*.ts`)
 
 interface PrinterState {
   statements: Array<string>

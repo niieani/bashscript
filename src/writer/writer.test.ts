@@ -27,6 +27,7 @@ type ASTType =
   | 'enhance'
   | 'group'
   | 'function'
+  | 'unknown'
 
 // ? do we mark start of content flow (terminated by \n) vs inline content (a; b;)?
 const starter: ASTObject<NoData> = {
@@ -87,10 +88,23 @@ const terminator : ASTObject<NoData> = ({
   reduce: terminatorReduce,
 })
 
+const last = <T>(array: Array<T>): T | undefined => array.slice().reverse()[0]
+const isBeginningOfLine = (context: TraverseState) => {
+  const token = last(context.parts)
+  return !token || token === newLine
+}
+
+const ensureStarter = ({_context: context}: ScopeContext) =>
+  (context.indent > 0 && isBeginningOfLine(context)) ? starter : ''
+
 const comment = (comment : string, withSpace = true): ASTObject<{comment: string}> => ({
   reduce: defaultReduce,
   type: 'comment',
-  parts: [`#${withSpace ? ' ' : ''}${comment}`, terminator],
+  parts: [
+    ensureStarter,
+    `#${withSpace ? ' ' : ''}${comment}`,
+    terminator,
+  ],
   data: {comment},
 })
 
@@ -126,21 +140,23 @@ const astGroup = (...children: ASTList): ASTObject<{children: ASTList}> => ({
  */
 const ast = (
   strings: TemplateStringsArray,
-  ...parts: Array<ASTExpression>,
+  ...parts: Array<ASTExpression | undefined>,
 ): Array<ASTObject> => (
   parts.every(part => typeof part !== 'function')
     ? combineAlternate(
         Array.from(strings),
         parts.flatten(1) as Array<string | ASTObject>
       )
-      .filter(node => !shouldTreatAsPureText(node) || node.length > 0)
+      .filter(node => node !== undefined && (!shouldTreatAsPureText(node) || node.length > 0))
       .map(coerceStringToAST)
     : [
       astGroup(
         ({_context: context}) => ensureASTObject(
           combineAlternate(
             Array.from(strings).map(coerceStringToAST),
-            parts.map((part) => ensureASTObject(part, context))
+            parts
+              .filter(part => typeof part !== 'undefined')
+              .map((part) => ensureASTObject(part!, context))
           ),
           context,
         )
@@ -150,7 +166,7 @@ const ast = (
 
 const statement = (
   strings: TemplateStringsArray,
-  ...parts: Array<ASTExpression>,
+  ...parts: Array<ASTExpression | undefined>,
 ): Array<ASTObject> => {
   const applied = ast(strings, ...parts)
   const [first, ...rest] = applied
@@ -191,7 +207,7 @@ const defineReducer = <T>({reducer, data}: {
  */
 const addToScope = (name: string) => defineReducer({
   data: {name},
-  reducer: ({scope, parts, ...context}: TraverseState): TraverseState => {
+  reducer: ({scope, parts, parent, ...context}: TraverseState): TraverseState => {
     let safeName = name
     let append = 0
     while (safeName in scope) {
@@ -201,11 +217,16 @@ const addToScope = (name: string) => defineReducer({
     }
     return {
       ...context,
+      parent,
       parts: [...parts, safeName],
-      scope: {
+      scope: createScopeProxy({
         ...scope,
-        [name]: {...scope.parent, toString: () => safeName, length: safeName.length},
-      },
+        [name]: {
+          ...parent,
+          toString: () => safeName,
+          length: safeName.length,
+        },
+      }),
     }
   },
 })
@@ -316,7 +337,7 @@ interface TraverseState {
   parent: ASTObject
   indent: number,
   scope: {
-    [variableName: string]: ASTObject & {toString(): string, length: number},
+    [variableName: string]: (ASTObject & {toString(): string, length: number} | undefined),
   }
 }
 
@@ -326,14 +347,47 @@ const astRoot: ASTObject<NoData> = {
   reduce: (ctx) => ctx,
 }
 
+const createScopeProxy = (scope: TraverseState['scope'] = {}) => new Proxy(
+  scope,
+  {
+    get: function(target, property, receiver): ASTObject & {toString(): string, length: number} {
+      if (property in target) {
+        return target[property]!
+      }
+      // workaround for jest:
+      if (property === 'getMockName') return (() => 'Scope') as any
+      if (property === 'mock') return {calls: []} as any
+
+      return {
+        type: 'unknown',
+        data: {},
+        length: property.toString().length,
+        reduce: (context) => context,
+        parts: [],
+        toString: () => property.toString(),
+      }
+    }
+  }
+)
+
 const emptyContext: TraverseState = {
   parts: [],
   partsToExtract: [],
   processed: [],
   scopePath: [],
-  scope: {},
+  scope: createScopeProxy(),
   parent: astRoot,
   indent: 0,
+}
+
+const isSkipType = (type: ASTType) => {
+  switch (type) {
+    case 'enhance':
+    case 'group':
+      return true
+    default:
+      return false
+  }
 }
 
 const reduceAST = (ast : ASTList, {parent: astParent, ...context} : TraverseState = emptyContext): TraverseState =>
@@ -343,7 +397,8 @@ const reduceAST = (ast : ASTList, {parent: astParent, ...context} : TraverseStat
         node,
         context,
       )
-      const newContext = parent.reduce({...context, parent})
+      const parentSkipType = isSkipType(parent.type) ? context.parent : parent
+      const newContext = parent.reduce({...context, parent: parentSkipType})
       return {...newContext, parent: astParent}
     },
     {...context, parent: astParent}
@@ -430,9 +485,9 @@ describe('writer', () => {
         declareFunction({
           name: 'setMood',
           body: [
-            declareVariable('itIs', raw('good')),
+            declareVariable('mood', raw('$1')),
             comment('this will be a recursive call'),
-            ({setMood}) => statement`${setMood} "awesome, because it's a ${setMood.type}"`,
+            ({setMood}) => statement`${setMood} "awesome, because it's a ${setMood && setMood.type}"`,
           ],
         }),
       ])

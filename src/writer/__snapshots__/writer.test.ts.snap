@@ -9,12 +9,23 @@ Object {
     "type": "root",
   },
   "parts": Array [
+    "",
     "# testing",
     "
 ",
   ],
   "partsToExtract": Array [],
   "processed": Array [
+    Object {
+      "data": Object {
+        "text": "",
+      },
+      "parts": Array [
+        "",
+      ],
+      "reduce": [Function],
+      "type": "raw",
+    },
     Object {
       "data": Object {
         "text": "# testing",
@@ -35,6 +46,7 @@ Object {
         "comment": "testing",
       },
       "parts": Array [
+        [Function],
         "# testing",
         Object {
           "data": Object {},
@@ -46,9 +58,19 @@ Object {
       "type": "comment",
     },
   ],
-  "scope": Object {},
+  "scope": [MockFunction Scope],
   "scopePath": Array [],
 }
+`;
+
+exports[`writer access the AST type of declared function 1`] = `
+"function setMood {
+  declare mood=$1
+  # this will be a recursive call
+  setMood \\"awesome, because it's a function\\"
+
+}
+"
 `;
 
 exports[`writer comment 1`] = `
