@@ -12,6 +12,17 @@
       "runtimeArgs": [
         "--inspect"
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Jest",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "run",
+        "jest-debug"
+      ],
+      "port": 9229
     }
   ]
 }
