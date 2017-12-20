@@ -2,10 +2,11 @@ import Ast, * as AST from 'ts-simple-ast'
 import * as ts from 'typescript'
 import * as path from 'path'
 import * as acorn from 'acorn'
+import {declareVariable, ast, referenceVar} from './writer/writer'
 
-const ast = new Ast()
+const tsAST = new Ast()
 const sourceDir = path.resolve(__dirname, '..', 'bashscript')
-ast.addExistingSourceFiles(`${sourceDir}/example/**/*.ts`)
+tsAST.addExistingSourceFiles(`${sourceDir}/example/**/*.ts`)
 
 interface PrinterState {
   statements: Array<string>
@@ -67,8 +68,11 @@ function functionVisitor(node: AST.FunctionDeclaration): VisitorReturn {
   const name = node.getName()
   const paramNodes = node.getParameters()
   const params = paramNodes.map((param, index) => {
-    const name = param.getName()
+    const name = param.getName() || '_'
     const type = param.getType()
+    // console.log(type.getText())
+
+    // return declareVariable(name, referenceVar(1))
     return `local ${name}="$${index+1}"`
   })
   const innerStatements = node.getStatements()
@@ -128,7 +132,7 @@ function fileVisitor(node: AST.Node): VisitorReturn {
 }
 
 function transpile(file: string) {
-  const example = ast.getSourceFile(file)
+  const example = tsAST.getSourceFile(file)
 
   if (!example) {
     return ''
