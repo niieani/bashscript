@@ -11,4 +11,13 @@ const x = 123;
 function lol(one: string, two: number) {
   // lol
   echo('x')
+  // after
+  echo('hmm')
+}
+
+function nestedFunctions() {
+  echo('hi')
+  function nestedOne() {
+    echo('hello')
+  }
 }
