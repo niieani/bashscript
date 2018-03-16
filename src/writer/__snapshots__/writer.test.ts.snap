@@ -68,7 +68,6 @@ exports[`writer access the AST type of declared function 1`] = `
   declare mood=$1
   # this will be a recursive call
   setMood \\"awesome, because it's a function\\"
-
 }
 "
 `;
@@ -93,8 +92,7 @@ exports[`writer declaration 1`] = `
 
 exports[`writer function declaration 1`] = `
 "function example {
-  echo \\"this is awesome\\"
-}
+  echo \\"this is awesome\\"}
 "
 `;
 

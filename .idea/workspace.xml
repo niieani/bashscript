@@ -2,11 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f12330fc-1f9b-4dea-9bef-a148edff4965" name="Default" comment="">
-      <change beforePath="" afterPath="$PROJECT_DIR$/src/writer/util.ts" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/src/writer/writer.ts" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/bashscript/example/example.ts" afterPath="$PROJECT_DIR$/bashscript/example/example.ts" />
+      <change beforePath="$PROJECT_DIR$/bashscript/target/module.sh" afterPath="$PROJECT_DIR$/bashscript/target/module.sh" />
+      <change beforePath="$PROJECT_DIR$/bashscript/target/user.sh" afterPath="$PROJECT_DIR$/bashscript/target/user.sh" />
       <change beforePath="$PROJECT_DIR$/src/index.ts" afterPath="$PROJECT_DIR$/src/index.ts" />
-      <change beforePath="$PROJECT_DIR$/src/writer/writer.test.ts" afterPath="$PROJECT_DIR$/src/writer/writer.test.ts" />
+      <change beforePath="$PROJECT_DIR$/src/writer/__snapshots__/writer.test.ts.snap" afterPath="$PROJECT_DIR$/src/writer/__snapshots__/writer.test.ts.snap" />
+      <change beforePath="$PROJECT_DIR$/src/writer/writer.ts" afterPath="$PROJECT_DIR$/src/writer/writer.ts" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -23,8 +25,8 @@
       <file leaf-file-name="writer.ts" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="196">
-              <caret line="308" column="24" lean-forward="true" selection-start-line="308" selection-start-column="24" selection-end-line="308" selection-end-column="24" />
+            <state relative-caret-position="304">
+              <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
               <folding />
             </state>
           </provider>
@@ -131,7 +133,7 @@
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectView">
-    <navigator proportions="" version="1">
+    <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -144,7 +146,11 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes />
+    <panes>
+      <pane id="Scope" />
+      <pane id="Scratches" />
+      <pane id="ProjectPane" />
+    </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.TypeScript" />
@@ -195,44 +201,46 @@
       <workItem from="1513728380831" duration="3138000" />
       <workItem from="1513731564478" duration="2233000" />
       <workItem from="1513804399387" duration="224000" />
-      <workItem from="1513804653904" duration="1920000" />
+      <workItem from="1513804653904" duration="3628000" />
+      <workItem from="1513978668516" duration="594000" />
+      <workItem from="1515157250797" duration="204000" />
     </task>
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 32m 12s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 07m 34s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 33m 53s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 25m 08s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 38m 05s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 40m 14s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 39m 36s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 43m 08s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 44m 57s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 44m 18s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 45m 10s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 44m 45s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 46m 15s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 45m 05s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 48m 47s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 46m 40s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 49m 50s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 47m 10s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
-    <history-entry file="Jest_(watch) - 2017.12.20 at 22h 51m 54s.xml">
+    <history-entry file="Jest_(watch) - 2017.12.21 at 00h 49m 27s.xml">
       <configuration name="Jest (watch)" configurationId="JavaScriptTestRunnerJest" />
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7515000" />
+    <option name="totallyTimeSpent" value="10021000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -244,27 +252,26 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
+    <frame x="0" y="0" width="1920" height="1080" extended-state="0" />
     <layout>
+      <window_info id="TypeScript" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16621253" sideWeight="0.4936508" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2154213" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3289855" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21253406" sideWeight="0.50625" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21940929" sideWeight="0.49375" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="npm" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.28973278" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="TypeScript" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16621253" sideWeight="0.4936508" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.215625" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21940929" sideWeight="0.49375" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2278481" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -305,6 +312,22 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" lean-forward="true" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/util.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="324">
@@ -341,7 +364,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="27">
           <caret line="102" column="4" lean-forward="false" selection-start-line="102" selection-start-column="4" selection-end-line="102" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -349,7 +371,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
           <caret line="5" column="27" lean-forward="true" selection-start-line="5" selection-start-column="27" selection-end-line="5" selection-end-column="27" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -357,7 +378,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="108">
           <caret line="4" column="21" lean-forward="false" selection-start-line="4" selection-start-column="21" selection-end-line="4" selection-end-column="21" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -365,7 +385,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="168">
           <caret line="32" column="36" lean-forward="false" selection-start-line="32" selection-start-column="36" selection-end-line="32" selection-end-column="36" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -373,14 +392,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="109" column="6" lean-forward="false" selection-start-line="109" selection-start-column="6" selection-end-line="109" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="196">
-          <caret line="308" column="24" lean-forward="true" selection-start-line="308" selection-start-column="24" selection-end-line="308" selection-end-column="24" />
+        <state relative-caret-position="304">
+          <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
           <folding />
         </state>
       </provider>

@@ -187,31 +187,38 @@ export const defineReducer = <T>({reducer, data} : {
 /**
  * adds a variable to scope and prints its name
  */
-export const addToScope = (name : string) => defineReducer({
-  data: {name},
-  reducer: ({scope, parts, parent, ...context} : TraverseState) : TraverseState => {
-    let safeName = name
-    let append = 0
-    while (safeName in scope) {
-      append++
-      // we need to rename this variable
-      safeName = `${name}_${append}`
-    }
-    return {
-      ...context,
-      parent,
-      parts: [...parts, safeName],
-      scope: createScopeProxy({
-        ...scope,
-        [name]: {
-          ...parent,
-          toString: () => safeName,
-          length: safeName.length,
-        },
-      }),
-    }
-  },
-})
+export const addToScope = (name : string, as? : ASTExpression) => asObject(
+  defineReducer({
+    data: {name},
+    reducer: (context : TraverseState) : TraverseState => {
+      const {scope, parts, parent} = context
+      let safeName = name
+      if (as) {
+        const {parts: asName} = reduceAST(ensureArray(as), {...context, parts: []})
+        safeName = asName.join('') || name
+      }
+      let append = 0
+      while (safeName in scope) {
+        append++
+        // we need to rename this variable
+        safeName = `${name}_${append}`
+      }
+      return {
+        ...context,
+        parent,
+        parts: [...parts, safeName],
+        scope: createScopeProxy({
+          ...scope,
+          [name]: {
+            ...parent,
+            toString: () => safeName,
+            length: safeName.length,
+          },
+        }),
+      }
+    },
+  })
+)
 
 export const declare = (
   variable : ASTExpression,
@@ -231,54 +238,89 @@ export const declareVariable = (
   name : string,
   initializer? : ASTExpression,
 ) : ASTObject<DeclarationData> => declare(
-  enhance(addToScope(name)),
+  addToScope(name),
   initializer,
 )
+
+const ensureArray = <T>(maybeArray: T | Array<T>): Array<T> =>
+  Array.isArray(maybeArray) ? maybeArray : [maybeArray]
 
 /**
  * in scopes { ... } and sub-shells ( ... ) we "fork" context
  * i.e. ignore its result down the line
  */
-export const inIsolatedScope = (body : ASTExpression, scopeDescription : string) => defineReducer({
-  reducer: (context) => {
-    const {
-      indent, processed, scope, scopePath, parent, partsToExtract, parts,
-    } = context
-    const innerContext = reduceAST(
-      [body],
-      {
-        indent: indent + 2,
-        scope,
-        scopePath: [...scopePath, scopeDescription],
-        processed: [],
-        parts: [],
-        partsToExtract: [],
-        parent,
-      },
-    )
-    return {
-      ...context,
-      partsToExtract: [...partsToExtract, ...innerContext.partsToExtract],
-      parts: [...parts, ...innerContext.parts],
-      processed: [...processed, parent, ...innerContext.processed],
-    }
-  },
-  data: {scopeDescription, body},
-})
+export const inIsolatedScope = (body : ASTExpression, scopeDescription : string) => asObject(
+  defineReducer({
+    reducer: (context) => {
+      const {
+        indent, processed, scope, scopePath, parent, partsToExtract, parts,
+      } = context
+      const innerContext = reduceAST(
+        ensureArray(body),
+        {
+          ...context,
+          indent: indent + 2,
+          scopePath: [...scopePath, scopeDescription],
+          processed: [],
+          parts: [],
+          partsToExtract: [],
+        },
+      )
+      return {
+        ...context,
+        partsToExtract: [...partsToExtract, ...innerContext.partsToExtract],
+        parts: [...parts, ...innerContext.parts],
+        processed: [...processed, parent, ...innerContext.processed],
+      }
+    },
+    data: {scopeDescription, body},
+  })
+)
 
-export type FunctionAST = {name : string, body : ASTExpression}
-export const declareFunction = ({name, body} : FunctionAST) : ASTObject<FunctionAST> => (
+export const extractedToRootScope = (body : ASTExpression) => asObject(
+  defineReducer({
+    reducer: (context) => {
+      const {
+        indent, processed, scope, scopePath, parent, partsToExtract, parts,
+      } = context
+      const extractedContext = reduceAST(
+        ensureArray(body),
+        {
+          ...context,
+          indent: 0,
+          parts: [],
+          partsToExtract: [],
+        },
+      )
+      return {
+        ...context,
+        partsToExtract: [
+          ...partsToExtract,
+          // we move normal parts to extracted ones:
+          ...extractedContext.parts,
+          ...extractedContext.partsToExtract,
+          newLine,
+        ],
+        parts,
+        processed: extractedContext.processed,
+      }
+    },
+    data: {body},
+  })
+)
+
+export type FunctionAST = {name : string, body : ASTExpression, as? : ASTExpression}
+export const declareFunction = ({name, body, as} : FunctionAST) : ASTObject<FunctionAST> => (
   {
     type: 'function',
-    data: {name, body},
+    data: {name, body, as},
     reduce: defaultReduce,
-    parts: statement`function ${enhance(addToScope(name))} {
-${enhance(inIsolatedScope(body, name))}
-}`,
+    parts: statement`function ${addToScope(name, as)} {
+${inIsolatedScope(body, name)}${starter}}`,
   }
 )
 
-export const enhance = <T>(reduce : DefinedReducer<T>) : ASTObject<T> => (
+export const asObject = <T>(reduce : DefinedReducer<T>) : ASTObject<T> => (
   {
     type: 'enhance',
     data: reduce.data,
@@ -415,5 +457,7 @@ export const reduceAST = (
     {...context, parent: astParent},
   )
 
-export const print = (ast : ASTList, context : TraverseState = emptyContext) =>
-  reduceAST(ast, context).parts.join('')
+export const print = (ast : ASTList, context : TraverseState = emptyContext) => {
+  const {partsToExtract, parts} = reduceAST(ast, context)
+  return [...partsToExtract, ...parts].join('')
+}
