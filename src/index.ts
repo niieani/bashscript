@@ -38,7 +38,7 @@ function unsupportedVisitor(node: AST.Node): VisitorReturn {
 function nodeVisitor(node: AST.Node, rootScope = true): VisitorReturn {
   switch (node.getKind()) {
     case ts.SyntaxKind.ExpressionStatement:
-      return expressionVisitor(node as AST.Node<ts.ExpressionStatement>)
+      return expressionVisitor(node as AST.Node<AST.ts.ExpressionStatement>)
     case ts.SyntaxKind.FunctionDeclaration:
       return functionVisitor(node as AST.FunctionDeclaration, rootScope)
     default:
@@ -122,7 +122,7 @@ const flatMap = <T>(nestedArray: Array<Array<T>>) : Array<T> =>
   ([] as Array<T>).concat(...nestedArray)
 
 // node.getChildrenOfKind(ts.SyntaxKind.CallExpression).
-function expressionVisitor(node: AST.Node<ts.ExpressionStatement>): VisitorReturn {
+function expressionVisitor(node: AST.Node<AST.ts.ExpressionStatement>): VisitorReturn {
   const expression = node.getChildAtIndex(0)!
   // console.log(expression)
   switch (expression.getKind()) {

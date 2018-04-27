@@ -10,18 +10,18 @@
     "jest-debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
   "dependencies": {
-    "acorn": "5.2.1",
+    "acorn": "5.5.3",
     "ramda": "0.25.0",
-    "ts-simple-ast": "4.0.1"
+    "ts-simple-ast": "9.1.0"
   },
   "devDependencies": {
     "@types/acorn": "4.0.3",
-    "@types/jest": "21.1.8",
-    "@types/node": "8.5.1",
-    "@types/ramda": "0.25.8",
-    "jest": "22.0.1",
-    "ts-jest": "21.2.4",
-    "ts-node": "4.0.2"
+    "@types/jest": "22.2.0",
+    "@types/node": "9.4.7",
+    "@types/ramda": "0.25.20",
+    "jest": "22.4.2",
+    "ts-jest": "22.4.1",
+    "ts-node": "5.0.1"
   },
   "jest": {
     "transform": {

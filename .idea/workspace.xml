@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BuildServerSettings">
+    <option name="LOGIN" value="" />
+    <option name="SERVER_URL" value="http://buildserver" />
+    <option name="REMEMBER_ME" value="true" />
+    <option name="USE_IDEA_PROXY_SETTINGS" value="true" />
+    <option name="INSPECTIONS_BUILD_TYPE_IDS" />
+    <option name="DUPLICATES_BUILD_TYPE_IDS" />
+    <option name="COVERAGE_SETTINGS" />
+    <option name="TEST_STATUS_ENABLED" value="true" />
+    <option name="TEST_STATUS_SHOW_SUCCESSFUL" value="false" />
+    <option name="ARTIFACTS_BUILD_TYPE_IDS" />
+    <option name="PERFORM_COMMIT_IF_SUCCESSFUL" value="true" />
+    <option name="PERFORM_COMMIT_IF_NO_NEW_FAILED_TESTS" value="false" />
+    <option name="REQUEST_CONFIRMATON" value="false" />
+    <option name="PRE_TESTED_COMMIT" value="true" />
+    <option name="FILTER_BY_STATUS" value="false" />
+    <option name="FILTER_MARKED_AS_FIXED" value="false" />
+    <option name="SHOW_CLOSE_PROMPT" value="true" />
+    <option name="TOOL_WINDOW_SELECTED_CONTENT_INDEX" value="0" />
+    <option name="FILTER_BY_CURRENT_PROJECT" value="true" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="f12330fc-1f9b-4dea-9bef-a148edff4965" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/bashscript/example/example.ts" afterPath="$PROJECT_DIR$/bashscript/example/example.ts" />
-      <change beforePath="$PROJECT_DIR$/bashscript/target/module.sh" afterPath="$PROJECT_DIR$/bashscript/target/module.sh" />
-      <change beforePath="$PROJECT_DIR$/bashscript/target/user.sh" afterPath="$PROJECT_DIR$/bashscript/target/user.sh" />
-      <change beforePath="$PROJECT_DIR$/src/index.ts" afterPath="$PROJECT_DIR$/src/index.ts" />
-      <change beforePath="$PROJECT_DIR$/src/writer/__snapshots__/writer.test.ts.snap" afterPath="$PROJECT_DIR$/src/writer/__snapshots__/writer.test.ts.snap" />
-      <change beforePath="$PROJECT_DIR$/src/writer/writer.ts" afterPath="$PROJECT_DIR$/src/writer/writer.ts" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -22,12 +40,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="writer.ts" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="304">
-              <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
-              <folding />
+            <state relative-caret-position="54">
+              <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
             </state>
           </provider>
         </entry>
@@ -133,35 +150,43 @@
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
-      <flattenPackages />
-      <showMembers />
-      <showModules />
-      <showLibraryContents />
-      <hideEmptyPackages />
-      <abbreviatePackageNames />
-      <autoscrollToSource />
-      <autoscrollFromSource />
-      <sortByType />
-      <manualOrder />
+    <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="Scratches" />
-      <pane id="ProjectPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="bashscript" type="b2602c69:ProjectViewProjectNode" />
+              <item name="bashscript" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="bashscript" type="b2602c69:ProjectViewProjectNode" />
+              <item name="bashscript" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.TypeScript" />
-    <property name="JavaScriptWeakerCompletionTypeGuess" value="false" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="HbShouldOpenHtmlAsHb" value="" />
-    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="JavaScriptWeakerCompletionTypeGuess" value="false" />
+    <property name="SearchEverywhereHistoryKey" value="ide sync&#9;ACTION&#9;CloudConfigActionGroup&#10;reformat&#9;ACTION&#9;ReformatCode&#10;type&#9;ACTION&#9;GotoTypeDeclaration&#10;side&#9;ACTION&#9;MTCompactSidebarAction&#10;reformat dia&#9;ACTION&#9;ShowReformatFileDialog&#10;refor&#9;ACTION&#9;ReformatCode&#10;format&#9;ACTION&#9;ReformatCode" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="node.js.detected.package.prettier" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.prettier" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.prettier" value="" />
     <property name="node.js.selected.package.tslint" value="" />
     <property name="nodejs.jest.jest_package" value="$PROJECT_DIR$/node_modules/jest" />
-    <property name="SearchEverywhereHistoryKey" value="reformat&#9;ACTION&#9;ReformatCode&#10;type&#9;ACTION&#9;GotoTypeDeclaration&#10;side&#9;ACTION&#9;MTCompactSidebarAction&#10;reformat dia&#9;ACTION&#9;ShowReformatFileDialog&#10;refor&#9;ACTION&#9;ReformatCode&#10;format&#9;ACTION&#9;ReformatCode" />
+    <property name="settings.editor.selected.configurable" value="com.chrisrm.idea.config" />
+    <property name="ts.external.directory.path" value="$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -185,9 +210,6 @@
       <scope-kind value="ALL" />
     </configuration>
   </component>
-  <component name="ShelveChangesManager" show_recycled="false">
-    <option name="remove_strategy" value="false" />
-  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -204,6 +226,13 @@
       <workItem from="1513804653904" duration="3628000" />
       <workItem from="1513978668516" duration="594000" />
       <workItem from="1515157250797" duration="204000" />
+      <workItem from="1522264866094" duration="43000" />
+      <workItem from="1522264942265" duration="707000" />
+      <workItem from="1522265691091" duration="508000" />
+      <workItem from="1522266293441" duration="43000" />
+      <workItem from="1522266354222" duration="136000" />
+      <workItem from="1522267039796" duration="32000" />
+      <workItem from="1522267090897" duration="111000" />
     </task>
     <servers />
   </component>
@@ -240,7 +269,7 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10021000" />
+    <option name="totallyTimeSpent" value="11601000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -252,27 +281,30 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1920" height="1080" extended-state="0" />
+    <frame x="0" y="0" width="1280" height="800" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info id="TypeScript" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16621253" sideWeight="0.4936508" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2154213" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3289855" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21253406" sideWeight="0.50625" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="npm" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21940929" sideWeight="0.49375" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2278481" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.3289855" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50625" side_tool="true" weight="0.21174863" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49375" weight="0.21940929" />
+      <window_info id="npm" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Quokka" order="8" />
+      <window_info anchor="bottom" id="Terminal" order="7" weight="0.2278481" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2154213" />
+      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="TeamCity" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="TypeScript" order="7" sideWeight="0.4936508" weight="0.16621253" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -307,16 +339,60 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager />
-    <watches-manager />
-  </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="9558">
-          <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
-          <folding />
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9558">
+          <caret line="354" column="3" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
         </state>
       </provider>
     </entry>
@@ -324,7 +400,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="9558">
           <caret line="354" column="3" lean-forward="true" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -332,15 +407,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="324">
           <caret line="12" column="3" lean-forward="true" selection-start-line="12" selection-start-column="3" selection-end-line="12" selection-end-column="3" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/util.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="486">
-          <caret line="18" column="20" lean-forward="false" selection-start-line="18" selection-start-column="20" selection-end-line="18" selection-end-column="20" />
-          <folding />
+          <caret line="18" column="20" selection-start-line="18" selection-start-column="20" selection-end-line="18" selection-end-column="20" />
         </state>
       </provider>
     </entry>
@@ -348,22 +421,20 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4104">
           <caret line="152" column="62" lean-forward="true" selection-start-line="152" selection-start-column="62" selection-end-line="152" selection-end-column="62" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/util.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="65">
-          <caret line="7" column="10" lean-forward="false" selection-start-line="7" selection-start-column="4" selection-end-line="7" selection-end-column="10" />
-          <folding />
+          <caret line="7" column="10" selection-start-line="7" selection-start-column="4" selection-end-line="7" selection-end-column="10" />
         </state>
       </provider>
     </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external/lib.es6.d.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="27">
-          <caret line="102" column="4" lean-forward="false" selection-start-line="102" selection-start-column="4" selection-end-line="102" selection-end-column="4" />
+          <caret line="102" column="4" selection-start-line="102" selection-start-column="4" selection-end-line="102" selection-end-column="4" />
         </state>
       </provider>
     </entry>
@@ -374,32 +445,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/node_modules/ts-simple-ast/dist/compiler/function/ParameterDeclaration.d.ts">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="4" column="21" lean-forward="false" selection-start-line="4" selection-start-column="21" selection-end-line="4" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/node_modules/ts-simple-ast/dist/compiler/base/ParameteredNode.d.ts">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="32" column="36" lean-forward="false" selection-start-line="32" selection-start-column="36" selection-end-line="32" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/node_modules/ts-simple-ast/dist/compiler/function/ParameterDeclaration.d.ts" />
+    <entry file="file://$PROJECT_DIR$/node_modules/ts-simple-ast/dist/compiler/base/ParameteredNode.d.ts" />
     <entry file="file://$PROJECT_DIR$/src/index.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
-          <caret line="109" column="6" lean-forward="false" selection-start-line="109" selection-start-column="6" selection-end-line="109" selection-end-column="6" />
+          <caret line="109" column="6" selection-start-line="109" selection-start-column="6" selection-end-line="109" selection-end-column="6" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/writer/writer.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="304">
-          <caret line="354" column="3" lean-forward="false" selection-start-line="354" selection-start-column="3" selection-end-line="354" selection-end-column="3" />
-          <folding />
+        <state relative-caret-position="552">
+          <caret line="366" column="108" selection-start-line="366" selection-start-column="108" selection-end-line="366" selection-end-column="108" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
         </state>
       </provider>
     </entry>
