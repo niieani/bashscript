@@ -1,7 +1,14 @@
 import '../util/flatmap'
 import {
-  comment, declareFunction, declareVariable, ensureASTObject,
-  print, raw, reduceAST, statement, terminator,
+  comment,
+  declareFunction,
+  declareVariable,
+  ensureASTObject,
+  print,
+  raw,
+  reduceAST,
+  statement,
+  terminator,
 } from './writer'
 import {combineAlternate} from './util'
 
@@ -11,43 +18,23 @@ import {combineAlternate} from './util'
 
 describe('writer', () => {
   test('comment', () => {
-    expect(
-      print([
-        comment('testing')
-      ])
-    ).toMatchSnapshot()
+    expect(print([comment('testing')])).toMatchSnapshot()
   })
 
   test('terminator', () => {
-    expect(
-      print([
-        terminator
-      ])
-    ).toMatchSnapshot()
+    expect(print([terminator])).toMatchSnapshot()
   })
 
   test('declaration', () => {
-    expect(
-      print([
-        declareVariable('hello', raw('test'))
-      ])
-    ).toMatchSnapshot()
+    expect(print([declareVariable('hello', raw('test'))])).toMatchSnapshot()
   })
 
   test('statement', () => {
-    expect(
-      print(
-        statement`echo test`
-      )
-    ).toMatchSnapshot()
+    expect(print(statement`echo test`)).toMatchSnapshot()
   })
 
   test('statement with raw', () => {
-    expect(
-      print(
-        statement`echo ${raw('raw test')}`
-      )
-    ).toMatchSnapshot()
+    expect(print(statement`echo ${raw('raw test')}`)).toMatchSnapshot()
   })
 
   test('scope is populated by variables', () => {
@@ -55,7 +42,7 @@ describe('writer', () => {
       print([
         declareVariable('example'),
         ({example}) => statement`echo ${example}`,
-      ])
+      ]),
     ).toMatchSnapshot()
   })
 
@@ -66,7 +53,7 @@ describe('writer', () => {
         ({example}) => statement`echo ${example}`,
         declareVariable('example'),
         ({example}) => statement`echo ${example}`, // will be example_1
-      ])
+      ]),
     ).toMatchSnapshot()
   })
 
@@ -77,7 +64,7 @@ describe('writer', () => {
           name: 'example',
           body: statement`echo "this is awesome"`,
         }),
-      ])
+      ]),
     ).toMatchSnapshot()
   })
 
@@ -89,26 +76,24 @@ describe('writer', () => {
           body: [
             declareVariable('mood', raw('$1')),
             comment('this will be a recursive call'),
-            ({setMood}) => statement`${setMood} "awesome, because it's a ${setMood && setMood.type}"`,
+            ({setMood}) =>
+              statement`${setMood} "awesome, because it's a ${setMood &&
+                setMood.type}"`,
           ],
         }),
-      ])
+      ]),
     ).toMatchSnapshot()
   })
 })
 
 describe('ast', () => {
   test('comment', () => {
-    expect(
-      reduceAST([comment('testing')])
-    ).toMatchSnapshot()
+    expect(reduceAST([comment('testing')])).toMatchSnapshot()
   })
 
   describe('ensureASTObject', () => {
     test('[] => group', () => {
-      expect(
-        ensureASTObject([])
-      ).toHaveProperty('type', 'group')
+      expect(ensureASTObject([])).toHaveProperty('type', 'group')
     })
     test('[text] => group with one raw node', () => {
       const result = ensureASTObject(['text'])
@@ -147,8 +132,13 @@ describe('ast', () => {
 
 describe('utils', () => {
   test('combineAlternate', () => {
-    expect(
-      combineAlternate(['a', 'b', 'c'], [1, 2, 3])
-    ).toMatchObject(['a', 1, 'b', 2, 'c', 3])
+    expect(combineAlternate(['a', 'b', 'c'], [1, 2, 3])).toMatchObject([
+      'a',
+      1,
+      'b',
+      2,
+      'c',
+      3,
+    ])
   })
 })

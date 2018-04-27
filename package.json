@@ -7,12 +7,15 @@
   "private": false,
   "scripts": {
     "start": "ts-node src/index",
-    "jest-debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
+    "jest-debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "pretty": "prettier --write \"./src/**/*.ts\""
   },
   "dependencies": {
     "acorn": "5.5.3",
+    "prettier": "1.12.1",
     "ramda": "0.25.0",
-    "ts-simple-ast": "10.5.0"
+    "ts-simple-ast": "10.5.0",
+    "typescript": "2.8.3"
   },
   "devDependencies": {
     "@types/acorn": "4.0.3",
@@ -36,5 +39,13 @@
       "json",
       "node"
     ]
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "bracketSpacing": false,
+    "arrowParens": "always",
+    "parser": "typescript"
   }
 }

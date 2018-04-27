@@ -1,18 +1,23 @@
 import {combineAlternate, findLastIndex, last} from './util'
 
 export type ScopeContext = {
-  _context : TraverseState
+  _context: TraverseState
 } & TraverseScope
-export type ScopeContextToAST<T = any> = (context : ScopeContext) => ASTResolvedExpression<T>
+export type ScopeContextToAST<T = any> = (
+  context: ScopeContext,
+) => ASTResolvedExpression<T>
 
 export interface ASTObject<T = any> {
-  type : ASTType
-  data : T
-  reduce : (context : TraverseState) => TraverseState
-  parts? : Array<ASTExpression>
+  type: ASTType
+  data: T
+  reduce: (context: TraverseState) => TraverseState
+  parts?: Array<ASTExpression>
 }
 
-export type ASTResolvedExpression<T = any> = string | ASTObject<T> | Array<string | ASTObject>
+export type ASTResolvedExpression<T = any> =
+  | string
+  | ASTObject<T>
+  | Array<string | ASTObject>
 export type ASTExpression =
   | ScopeContextToAST
   | ASTResolvedExpression
@@ -32,14 +37,14 @@ export type ASTType =
   | 'unknown'
   | 'variable'
 
-export type CommentData = {comment : string}
+export type CommentData = {comment: string}
 export type NoData = {}
 
 // ? do we mark start of content flow (terminated by \n) vs inline content (a; b;)?
-export const starter : ASTObject<NoData> = {
+export const starter: ASTObject<NoData> = {
   type: 'starter',
   data: {},
-  reduce(context) : TraverseState {
+  reduce(context): TraverseState {
     const {processed, parts, indent} = context
     return {
       ...context,
@@ -51,125 +56,126 @@ export const starter : ASTObject<NoData> = {
 
 export const newLine = '\n'
 export const semi = '; '
-export const lastStarterAt = findLastIndex(({type} : ASTObject) => type === 'starter')
-export const lastTerminatorAt = findLastIndex(({type} : ASTObject) => type === 'terminator')
-export const contentSincePreviousTerminator = ({processed} : TraverseState) => {
+export const lastStarterAt = findLastIndex(
+  ({type}: ASTObject) => type === 'starter',
+)
+export const lastTerminatorAt = findLastIndex(
+  ({type}: ASTObject) => type === 'terminator',
+)
+export const contentSincePreviousTerminator = ({processed}: TraverseState) => {
   const previousTerminatorIndex = lastTerminatorAt(processed)
   return previousTerminatorIndex >= 0
     ? processed.slice(previousTerminatorIndex)
     : processed
 }
 
-export const getInlineComments = (objects : Array<ASTObject>) =>
-  objects.filter(obj => obj.type === 'comment-inline') as Array<ASTObject<CommentData>>
+export const getInlineComments = (objects: Array<ASTObject>) =>
+  objects.filter((obj) => obj.type === 'comment-inline') as Array<
+    ASTObject<CommentData>
+  >
 
 export function terminatorReduce(
-  this : ASTObject<NoData>,
-  context : TraverseState,
-) : TraverseState {
+  this: ASTObject<NoData>,
+  context: TraverseState,
+): TraverseState {
   const {processed, parts} = context
   const sinceLastTerminator = contentSincePreviousTerminator(context)
   const comments = getInlineComments(sinceLastTerminator)
-  const commentText = `# ${comments.map(({data: {comment: text}}) => text).join(' | ')}`
+  const commentText = `# ${comments
+    .map(({data: {comment: text}}) => text)
+    .join(' | ')}`
 
   return {
     ...context,
     processed: [...processed, this],
     parts: comments.length
-      ? [...parts, newLine, commentText] : [...parts, newLine],
+      ? [...parts, newLine, commentText]
+      : [...parts, newLine],
   }
 }
 
-export const terminator : ASTObject<NoData> = (
-  {
-    type: 'terminator',
-    data: {},
-    reduce: terminatorReduce,
-  }
-)
+export const terminator: ASTObject<NoData> = {
+  type: 'terminator',
+  data: {},
+  reduce: terminatorReduce,
+}
 
-export const isBeginningOfLine = (context : TraverseState) => {
+export const isBeginningOfLine = (context: TraverseState) => {
   const token = last(context.parts)
   return !token || token === newLine
 }
 
-export const ensureStarter = ({_context: context} : ScopeContext) => (
-  context.indent > 0 && isBeginningOfLine(context)
-) ? starter : ''
+export const ensureStarter = ({_context: context}: ScopeContext) =>
+  context.indent > 0 && isBeginningOfLine(context) ? starter : ''
 
-export const comment = (comment : string, withSpace = true) : ASTObject<{comment : string}> => (
-  {
-    reduce: defaultReduce,
-    type: 'comment',
-    parts: [
-      ensureStarter,
-      `#${withSpace ? ' ' : ''}${comment}`,
-      terminator,
-    ],
-    data: {comment},
-  }
-)
+export const comment = (
+  comment: string,
+  withSpace = true,
+): ASTObject<{comment: string}> => ({
+  reduce: defaultReduce,
+  type: 'comment',
+  parts: [ensureStarter, `#${withSpace ? ' ' : ''}${comment}`, terminator],
+  data: {comment},
+})
 
-export const astGroup = (...children : ASTList) : ASTObject<{children : ASTList}> => (
-  {
-    type: 'group',
-    data: {children},
-    reduce: function reduce(context : TraverseState) : TraverseState {
-      return reduceAST(children, context)
-    },
-  }
-)
+export const astGroup = (
+  ...children: ASTList
+): ASTObject<{children: ASTList}> => ({
+  type: 'group',
+  data: {children},
+  reduce: (context: TraverseState): TraverseState =>
+    reduceAST(children, context),
+})
 
 /**
  * Template string for creating AST from nodes/strings and functions
  */
 export const ast = (
-  strings : TemplateStringsArray,
-  ...parts : Array<ASTExpression | undefined>,
-) : Array<ASTObject> => (
-  parts.every(part => typeof part !== 'function')
-    ? combineAlternate(
-    Array.from(strings),
-    parts.flatten(1) as Array<string | ASTObject>,
-    )
-    .filter(node => node !== undefined && (
-      !shouldTreatAsPureText(node) || node.length > 0
-    ))
-    .map(coerceStringToAST)
+  strings: TemplateStringsArray,
+  ...parts: Array<ASTExpression | undefined>
+): Array<ASTObject> =>
+  parts.every((part) => typeof part !== 'function')
+    ? combineAlternate(Array.from(strings), parts.flatten(1) as Array<
+        string | ASTObject
+      >)
+        .filter(
+          (node) =>
+            node !== undefined &&
+            (!shouldTreatAsPureText(node) || node.length > 0),
+        )
+        .map(coerceStringToAST)
     : [
-      astGroup(
-        ({_context: context}) => ensureASTObject(
-          combineAlternate(
-            Array.from(strings).map(coerceStringToAST),
-            parts
-              .filter(part => typeof part !== 'undefined')
-              .map((part) => ensureASTObject(part!, context)),
+        astGroup(({_context: context}) =>
+          ensureASTObject(
+            combineAlternate(
+              Array.from(strings).map(coerceStringToAST),
+              parts
+                .filter((part) => typeof part !== 'undefined')
+                .map((part) => ensureASTObject(part!, context)),
+            ),
+            context,
           ),
-          context,
         ),
-      ),
-    ]
-)
+      ]
 
 export const statement = (
-  strings : TemplateStringsArray,
-  ...parts : Array<ASTExpression | undefined>,
-) : Array<ASTObject> => {
+  strings: TemplateStringsArray,
+  ...parts: Array<ASTExpression | undefined>
+): Array<ASTObject> => {
   const applied = ast(strings, ...parts)
   const [first, ...rest] = applied
   const [last] = rest.reverse()
   return [
-    ...(
-      first && first.type !== 'starter' ? [starter] : []
-    ),
+    ...(first && first.type !== 'starter' ? [starter] : []),
     ...applied,
-    ...(
-      last && last.type !== 'terminator' ? [terminator] : []
-    ),
+    ...(last && last.type !== 'terminator' ? [terminator] : []),
   ]
 }
 
-export function defaultReduce(this : ASTObject, context : TraverseState) : TraverseState {
+export function defaultReduce(
+  this: ASTObject,
+  context: TraverseState,
+): TraverseState {
   const {processed, ...nextContext} = reduceAST(this.parts || [], context)
   return {
     ...nextContext,
@@ -177,70 +183,75 @@ export function defaultReduce(this : ASTObject, context : TraverseState) : Trave
   }
 }
 
-export type DeclarationData = {variable : ASTExpression, initializer : ASTExpression | undefined}
-export type Reducer = (context : TraverseState) => TraverseState
-export type DefinedReducer<T> = Reducer & {data : T}
-export const defineReducer = <T>({reducer, data} : {
-  reducer : (context : TraverseState) => TraverseState,
-  data : T,
+export type DeclarationData = {
+  variable: ASTExpression
+  initializer: ASTExpression | undefined
+}
+export type Reducer = (context: TraverseState) => TraverseState
+export type DefinedReducer<T> = Reducer & {data: T}
+export const defineReducer = <T>({
+  reducer,
+  data,
+}: {
+  reducer: (context: TraverseState) => TraverseState
+  data: T
 }) => Object.assign(reducer, {data})
 /**
  * adds a variable to scope and prints its name
  */
-export const addToScope = (name : string, as? : ASTExpression) => asObject(
-  defineReducer({
-    data: {name},
-    reducer: (context : TraverseState) : TraverseState => {
-      const {scope, parts, parent} = context
-      let safeName = name
-      if (as) {
-        const {parts: asName} = reduceAST(ensureArray(as), {...context, parts: []})
-        safeName = asName.join('') || name
-      }
-      let append = 0
-      while (safeName in scope) {
-        append++
-        // we need to rename this variable
-        safeName = `${name}_${append}`
-      }
-      return {
-        ...context,
-        parent,
-        parts: [...parts, safeName],
-        scope: createScopeProxy({
-          ...scope,
-          [name]: {
-            ...parent,
-            toString: () => safeName,
-            length: safeName.length,
-          },
-        }),
-      }
-    },
-  })
-)
+export const addToScope = (name: string, as?: ASTExpression) =>
+  asObject(
+    defineReducer({
+      data: {name},
+      reducer: (context: TraverseState): TraverseState => {
+        const {scope, parts, parent} = context
+        let safeName = name
+        if (as) {
+          const {parts: asName} = reduceAST(ensureArray(as), {
+            ...context,
+            parts: [],
+          })
+          safeName = asName.join('') || name
+        }
+        let append = 0
+        while (safeName in scope) {
+          append++
+          // we need to rename this variable
+          safeName = `${name}_${append}`
+        }
+        return {
+          ...context,
+          parent,
+          parts: [...parts, safeName],
+          scope: createScopeProxy({
+            ...scope,
+            [name]: {
+              ...parent,
+              toString: () => safeName,
+              length: safeName.length,
+            },
+          }),
+        }
+      },
+    }),
+  )
 
 export const declare = (
-  variable : ASTExpression,
-  initializer? : ASTExpression,
-) : ASTObject<DeclarationData> => (
-  {
-    parts: initializer
-      ? statement`declare ${variable}=${initializer}`
-      : statement`declare ${variable}`,
-    type: 'declaration',
-    data: {variable, initializer},
-    reduce: defaultReduce,
-  }
-)
+  variable: ASTExpression,
+  initializer?: ASTExpression,
+): ASTObject<DeclarationData> => ({
+  parts: initializer
+    ? statement`declare ${variable}=${initializer}`
+    : statement`declare ${variable}`,
+  type: 'declaration',
+  data: {variable, initializer},
+  reduce: defaultReduce,
+})
 
 export const declareVariable = (
-  name : string,
-  initializer? : ASTExpression,
-) : ASTObject<DeclarationData> => declare(
-  addToScope(name),
-  initializer,
-)
+  name: string,
+  initializer?: ASTExpression,
+): ASTObject<DeclarationData> => declare(addToScope(name), initializer)
 
 const ensureArray = <T>(maybeArray: T | Array<T>): Array<T> =>
   Array.isArray(maybeArray) ? maybeArray : [maybeArray]
@@ -249,163 +260,181 @@ const ensureArray = <T>(maybeArray: T | Array<T>): Array<T> =>
  * in scopes { ... } and sub-shells ( ... ) we "fork" context
  * i.e. ignore its result down the line
  */
-export const inIsolatedScope = (body : ASTExpression, scopeDescription : string) => asObject(
-  defineReducer({
-    reducer: (context) => {
-      const {
-        indent, processed, scope, scopePath, parent, partsToExtract, parts,
-      } = context
-      const innerContext = reduceAST(
-        ensureArray(body),
-        {
+export const inIsolatedScope = (
+  body: ASTExpression,
+  scopeDescription: string,
+) =>
+  asObject(
+    defineReducer({
+      reducer: (context) => {
+        const {
+          indent,
+          processed,
+          scope,
+          scopePath,
+          parent,
+          partsToExtract,
+          parts,
+        } = context
+        const innerContext = reduceAST(ensureArray(body), {
           ...context,
           indent: indent + 2,
           scopePath: [...scopePath, scopeDescription],
           processed: [],
           parts: [],
           partsToExtract: [],
-        },
-      )
-      return {
-        ...context,
-        partsToExtract: [...partsToExtract, ...innerContext.partsToExtract],
-        parts: [...parts, ...innerContext.parts],
-        processed: [...processed, parent, ...innerContext.processed],
-      }
-    },
-    data: {scopeDescription, body},
-  })
-)
+        })
+        return {
+          ...context,
+          partsToExtract: [...partsToExtract, ...innerContext.partsToExtract],
+          parts: [...parts, ...innerContext.parts],
+          processed: [...processed, parent, ...innerContext.processed],
+        }
+      },
+      data: {scopeDescription, body},
+    }),
+  )
 
-export const extractedToRootScope = (body : ASTExpression) => asObject(
-  defineReducer({
-    reducer: (context) => {
-      const {
-        indent, processed, scope, scopePath, parent, partsToExtract, parts,
-      } = context
-      const extractedContext = reduceAST(
-        ensureArray(body),
-        {
+export const extractedToRootScope = (body: ASTExpression) =>
+  asObject(
+    defineReducer({
+      reducer: (context) => {
+        const {
+          indent,
+          processed,
+          scope,
+          scopePath,
+          parent,
+          partsToExtract,
+          parts,
+        } = context
+        const extractedContext = reduceAST(ensureArray(body), {
           ...context,
           indent: 0,
           parts: [],
           partsToExtract: [],
-        },
-      )
-      return {
-        ...context,
-        partsToExtract: [
-          ...partsToExtract,
-          // we move normal parts to extracted ones:
-          ...extractedContext.parts,
-          ...extractedContext.partsToExtract,
-          newLine,
-        ],
-        parts,
-        processed: extractedContext.processed,
-      }
-    },
-    data: {body},
-  })
-)
+        })
+        return {
+          ...context,
+          partsToExtract: [
+            ...partsToExtract,
+            // we move normal parts to extracted ones:
+            ...extractedContext.parts,
+            ...extractedContext.partsToExtract,
+            newLine,
+          ],
+          parts,
+          processed: extractedContext.processed,
+        }
+      },
+      data: {body},
+    }),
+  )
 
-export type FunctionAST = {name : string, body : ASTExpression, as? : ASTExpression}
-export const declareFunction = ({name, body, as} : FunctionAST) : ASTObject<FunctionAST> => (
-  {
-    type: 'function',
-    data: {name, body, as},
-    reduce: defaultReduce,
-    parts: statement`function ${addToScope(name, as)} {
+export type FunctionAST = {
+  name: string
+  body: ASTExpression
+  as?: ASTExpression
+}
+export const declareFunction = ({
+  name,
+  body,
+  as,
+}: FunctionAST): ASTObject<FunctionAST> => ({
+  type: 'function',
+  data: {name, body, as},
+  reduce: defaultReduce,
+  parts: statement`function ${addToScope(name, as)} {
 ${inIsolatedScope(body, name)}${starter}}`,
-  }
-)
+})
 
-export const asObject = <T>(reduce : DefinedReducer<T>) : ASTObject<T> => (
-  {
-    type: 'enhance',
-    data: reduce.data,
-    reduce,
-  }
-)
+export const asObject = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
+  type: 'enhance',
+  data: reduce.data,
+  reduce,
+})
 
-export const raw = (text : string) : ASTObject<{text : string}> => (
-  {
-    reduce: function reduce({processed, parts, ...context}) {
-      return {
-        ...context,
-        processed: [...processed, this],
-        parts: [...parts, text],
-      }
-    },
-    parts: [text],
-    data: {text},
-    type: 'raw',
-  }
-)
+export const raw = (text: string): ASTObject<{text: string}> => ({
+  reduce: function reduce({processed, parts, ...context}) {
+    return {
+      ...context,
+      processed: [...processed, this],
+      parts: [...parts, text],
+    }
+  },
+  parts: [text],
+  data: {text},
+  type: 'raw',
+})
 
-export type VariableData = {name : string | number}
-export const referenceVar = (name : string | number) : ASTObject<VariableData> => ({
+export type VariableData = {name: string | number}
+export const referenceVar = (
+  name: string | number,
+): ASTObject<VariableData> => ({
   type: 'variable',
   parts: [ast`\${${name.toString()}}`],
   data: {name},
   reduce: defaultReduce,
 })
 
-export const scopeHelper = (context : TraverseState) => (
-  {
+export const scopeHelper = (context: TraverseState) =>
+  ({
     ...context.scope,
     _context: context,
-  } as ScopeContext
-)
+  } as ScopeContext)
 
-export const shouldTreatAsPureText = (textOrAST : ASTObject | string) : textOrAST is string =>
+export const shouldTreatAsPureText = (
+  textOrAST: ASTObject | string,
+): textOrAST is string =>
   typeof textOrAST === 'string' || textOrAST.hasOwnProperty('toString')
 
-export const coerceStringToAST = <T>(textOrAST : ASTObject<T> | string) =>
+export const coerceStringToAST = <T>(textOrAST: ASTObject<T> | string) =>
   shouldTreatAsPureText(textOrAST) ? raw(textOrAST) : textOrAST
 
-export const ensureASTObject = (node : ASTExpression, context : TraverseState = emptyContext) : ASTObject =>
+export const ensureASTObject = (
+  node: ASTExpression,
+  context: TraverseState = emptyContext,
+): ASTObject =>
   Array.isArray(node)
     ? astGroup(...node.flatten(100).map(coerceStringToAST))
     : typeof node === 'function'
-    ? ensureASTObject(node(scopeHelper(context)), context)
-    : coerceStringToAST(node)
+      ? ensureASTObject(node(scopeHelper(context)), context)
+      : coerceStringToAST(node)
 
 export interface TraverseScope {
-  [variableName : string] : (ASTObject & {toString() : string, length : number} | undefined),
+  [variableName: string]:
+    | ASTObject & {toString(): string; length: number}
+    | undefined
 }
 
 export interface TraverseState {
-  parts : Array<string>
-  partsToExtract : Array<string>
-  processed : Array<ASTObject>
-  scopePath : Array<string>
-  parent : ASTObject
-  indent : number,
-  scope : TraverseScope,
+  parts: Array<string>
+  partsToExtract: Array<string>
+  processed: Array<ASTObject>
+  scopePath: Array<string>
+  parent: ASTObject
+  indent: number
+  scope: TraverseScope
 }
 
-export const astRoot : ASTObject<NoData> = {
+export const astRoot: ASTObject<NoData> = {
   type: 'root',
   data: {},
   reduce: (ctx) => ctx,
 }
 
-export const createScopeProxy = (scope : TraverseScope = {}) => new Proxy(
-  scope,
-  {
-    get: function (
+export const createScopeProxy = (scope: TraverseScope = {}) =>
+  new Proxy(scope, {
+    get: function(
       target,
       property,
       receiver,
-    ) : ASTObject & {toString() : string, length : number} {
+    ): ASTObject & {toString(): string; length: number} {
       if (property in target) {
         return target[property]!
       }
       // workaround for jest:
-      if (property === 'getMockName') return (
-        () => 'Scope'
-      ) as any
+      if (property === 'getMockName') return (() => 'Scope') as any
       if (property === 'mock') return {calls: []} as any
 
       return {
@@ -417,10 +446,9 @@ export const createScopeProxy = (scope : TraverseScope = {}) => new Proxy(
         toString: () => property.toString(),
       }
     },
-  },
-)
+  })
 
-export const emptyContext : TraverseState = {
+export const emptyContext: TraverseState = {
   parts: [],
   partsToExtract: [],
   processed: [],
@@ -430,7 +458,7 @@ export const emptyContext : TraverseState = {
   indent: 0,
 }
 
-export const isSkipType = (type : ASTType) => {
+export const isSkipType = (type: ASTType) => {
   switch (type) {
     case 'enhance':
     case 'group':
@@ -441,15 +469,12 @@ export const isSkipType = (type : ASTType) => {
 }
 
 export const reduceAST = (
-  ast : ASTList,
-  {parent: astParent, ...context} : TraverseState = emptyContext,
-) : TraverseState =>
+  ast: ASTList,
+  {parent: astParent, ...context}: TraverseState = emptyContext,
+): TraverseState =>
   ast.reduce(
-    (context : TraverseState, node) => {
-      const parent = ensureASTObject(
-        node,
-        context,
-      )
+    (context: TraverseState, node) => {
+      const parent = ensureASTObject(node, context)
       const parentSkipType = isSkipType(parent.type) ? context.parent : parent
       const newContext = parent.reduce({...context, parent: parentSkipType})
       return {...newContext, parent: astParent}
@@ -457,7 +482,7 @@ export const reduceAST = (
     {...context, parent: astParent},
   )
 
-export const print = (ast : ASTList, context : TraverseState = emptyContext) => {
+export const print = (ast: ASTList, context: TraverseState = emptyContext) => {
   const {partsToExtract, parts} = reduceAST(ast, context)
   return [...partsToExtract, ...parts].join('')
 }

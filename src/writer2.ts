@@ -14,7 +14,7 @@
  * ]`
  */
 interface Node {
-  print(): string | {root: string, node: string}
+  print(): string | {root: string; node: string}
 }
 interface Statement extends Node {}
 interface RootNode {
@@ -26,7 +26,7 @@ const RootNode = (...statements: Array<Statement>): RootNode => {
 
   const print = () => {
     let output = ''
-    statements.reduce((api : RootNode, statement) => {
+    statements.reduce((api: RootNode, statement) => {
       return api.concat(statement)
       // statement.print()
     }, api)
@@ -37,7 +37,7 @@ const RootNode = (...statements: Array<Statement>): RootNode => {
   const concat = (...moreStatements: Array<Statement>) =>
     RootNode(...statements, ...moreStatements)
 
-  const api : RootNode = {
+  const api: RootNode = {
     print,
     concat,
   }
