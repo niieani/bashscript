@@ -35,3 +35,6 @@ export const findLastIndex = <T>(
 
 export const last = <T>(array: Array<T>): T | undefined =>
   array.slice().reverse()[0]
+
+export const ensureArray = <T>(maybeArray: T | Array<T>): Array<T> =>
+  Array.isArray(maybeArray) ? maybeArray : [maybeArray]

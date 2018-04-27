@@ -1,16 +1,10 @@
 import '../util/flatmap'
-import {
-  comment,
-  declareFunction,
-  declareVariable,
-  ensureASTObject,
-  print,
-  raw,
-  reduceAST,
-  statement,
-  terminator,
-} from './writer'
-import {combineAlternate} from './util'
+import {print, reduceAST} from './writer'
+import {declareFunction, declareVariable, raw} from './syntax/parts'
+import {terminator} from './syntax/terminator'
+import {comment} from './syntax/comment'
+import {statement} from './statement'
+import {ensureASTObject} from './context'
 
 // comment helper:
 // _COMMENT_=
@@ -127,18 +121,5 @@ describe('ast', () => {
       expect(result.data).toHaveProperty('children')
       expect(result.data.children).toHaveLength(2)
     })
-  })
-})
-
-describe('utils', () => {
-  test('combineAlternate', () => {
-    expect(combineAlternate(['a', 'b', 'c'], [1, 2, 3])).toMatchObject([
-      'a',
-      1,
-      'b',
-      2,
-      'c',
-      3,
-    ])
   })
 })
