@@ -1,6 +1,7 @@
 import * as AST from 'ts-simple-ast'
 import * as acorn from 'acorn'
 import {comment} from '../writer/syntax/comment'
+import {ASTObject} from '../writer/types'
 
 export const getCommentObjects = (node: AST.Node) =>
   getComments(node).map((text) => comment(text, false))
