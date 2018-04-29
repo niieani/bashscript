@@ -1,25 +1,13 @@
 import './util/flatmap'
 import Ast from 'ts-simple-ast'
 import * as path from 'path'
-import {print} from './writer/writer'
-import {fileVisitor} from './visitors'
+import {transpile} from './transpile'
+import {SourceFile} from 'ts-simple-ast'
 
-export function transpile(file: string) {
+export const getFile = (file: string) => {
   const tsAST = new Ast()
-  const sourceDir = path.resolve(__dirname, '..', 'bashscript')
+  const sourceDir = path.resolve(__dirname, '..', 'fixtures')
   tsAST.addExistingSourceFiles(`${sourceDir}/example/**/*.ts`)
-
-  const example = tsAST.getSourceFile(file)
-
-  if (!example) {
-    return ''
-  }
-
-  // ordered statements in the file
-  // function call is a statement, function definition is a statement, etc.
-  const children = example.getChildren()
-  const statements = children.map(fileVisitor).flatten(1)
-  return print(statements)
+  return tsAST.getSourceFile(file)
 }
 
-console.log(transpile('example.ts'))
