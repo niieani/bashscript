@@ -1,10 +1,25 @@
 # BashScript
 
-A JavaScript/TypeScript to `bash` transpiler. Work in progress.
+A JavaScript/TypeScript to `bash` transpiler. **Work in progress.**
 
-Because.
+Why? Mainly because I wanted to learn how to make a transpiler.
 
-## Examples
+I also wanted to experiment with `bash` and how far we could stretch
+this old, yet widely cross-platform language.
+
+I've previously created a framework trying to make `bash` as usable as possible:
+[Bash Infinity](https://github.com/niieani/bash-oo-framework).
+This seemed like the natural next step.
+
+Also, because... why not? 🤓
+
+## REPL
+
+Not much works, but it's cool. :-)
+
+The current [REPL](https://niieani.github.io/bashscript/).
+
+## Specification (WIP)
 
 ### Function invocation
 
