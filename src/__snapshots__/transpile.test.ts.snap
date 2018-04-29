@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`transpile a larger program 1`] = `
+"function nestedFunctions.nestedOne {
+  echo 'hello'
+}
+
+@module \\"./util\\" write 'hello'
+declare x=# Unsupported initializer type: NumericLiteral
+
+# I'm a comment
+# I'm a multiline comment
+#   ...indeed... 
+function lol {
+  declare one=\${1}
+  declare two=\${2}
+  # lol
+  echo 'x'
+  # after
+  echo 'hmm'
+}
+function nestedFunctions {
+  echo 'hi'
+  # function declaration extracted, see: nestedFunctions.nestedOne
+}
+"
+`;
