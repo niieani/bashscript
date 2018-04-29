@@ -1,10 +1,12 @@
 import '../util/flatmap'
-import {print, reduceAST} from './writer'
-import {declareFunction, declareVariable, raw} from './syntax/parts'
+import {print} from './writer'
+import {declareFunction, declareVariable} from './syntax/parts'
 import {terminator} from './syntax/terminator'
 import {comment} from './syntax/comment'
 import {statement} from './statement'
-import {ensureASTObject} from './context'
+import {ensureASTObject} from './context-util'
+import {reduceAST} from './reducers'
+import {raw} from './syntax/raw'
 
 // comment helper:
 // _COMMENT_=
@@ -119,7 +121,7 @@ describe('ast', () => {
       const result = ensureASTObject(() => statement`text`)
       expect(result).toHaveProperty('type', 'group')
       expect(result.data).toHaveProperty('children')
-      expect(result.data.children).toHaveLength(2)
+      expect(result.data.children).toHaveLength(3)
     })
   })
 })

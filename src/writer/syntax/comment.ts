@@ -1,7 +1,7 @@
-import {ASTObject, CommentData} from '../types'
+import {ASTObject} from '../types'
 import {ensureStarter} from './starter'
 import {terminator} from './terminator'
-import {defaultReduce} from '../writer'
+import {defaultReduce} from '../reducers'
 
 export const comment = (
   comment: string,
@@ -13,7 +13,4 @@ export const comment = (
   data: {comment},
 })
 
-export const getInlineComments = (objects: Array<ASTObject>) =>
-  objects.filter((obj) => obj.type === 'comment-inline') as Array<
-    ASTObject<CommentData>
-  >
+

@@ -1,14 +1,9 @@
-import {
-  ASTExpression,
-  ASTObject,
-  DefinedReducer,
-  ScopeContext,
-  TraverseScope,
-  TraverseState,
-} from './types'
+import {ASTExpression, ASTObject, DefinedReducer, ScopeContext, TraverseState} from './types'
 import {ensureArray} from '../util/array'
-import {defineReducer, reduceAST} from './writer'
+import {defineReducer, reduceAST} from './reducers'
 import {newLine} from './syntax/starter'
+import {createScopeProxy} from './scope-proxy'
+import {print} from './writer'
 
 export const asObject = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
   type: 'enhance',
@@ -19,7 +14,7 @@ export const asObject = <T>(reduce: DefinedReducer<T>): ASTObject<T> => ({
 /**
  * adds a variable to scope and prints its name
  */
-export const addToScope = (name: string, as?: ASTExpression) =>
+export const addToScopeAndWrite = (name: string, as?: ASTExpression) =>
   asObject(
     defineReducer({
       data: {name},
@@ -54,6 +49,28 @@ export const addToScope = (name: string, as?: ASTExpression) =>
         }
       },
     }),
+  )
+
+export const addToScopeAndReplaceUsage = (name: string, usage: ASTExpression) =>
+  asObject(
+    defineReducer({
+      data: {name, usage},
+      reducer: (context: TraverseState): TraverseState => {
+        const {scope, parent} = context
+        const usageText = print(usage, {...context, parts: []})
+        return {
+          ...context,
+          scope: createScopeProxy({
+            ...scope,
+            [name]: {
+              ...parent,
+              toString: () => usageText,
+              length: usageText.length,
+            },
+          }),
+        }
+      },
+    })
   )
 
 /**
@@ -137,27 +154,4 @@ export const scopeHelper = (context: TraverseState) =>
     _context: context,
   } as ScopeContext)
 
-export const createScopeProxy = (scope: TraverseScope = {}) =>
-  new Proxy(scope, {
-    get: function(
-      target,
-      property,
-      receiver,
-    ): ASTObject & {toString(): string; length: number} {
-      if (property in target) {
-        return target[property]!
-      }
-      // workaround for jest:
-      if (property === 'getMockName') return (() => 'Scope') as any
-      if (property === 'mock') return {calls: []} as any
 
-      return {
-        type: 'unknown',
-        data: {},
-        length: property.toString().length,
-        reduce: (context) => context,
-        parts: [],
-        toString: () => property.toString(),
-      }
-    },
-  })

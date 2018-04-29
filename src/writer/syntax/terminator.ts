@@ -1,7 +1,7 @@
 import {ASTObject, NoData, TraverseState} from '../types'
 import {newLine} from './starter'
 import {findLastIndex} from '../../util/array'
-import {getInlineComments} from './comment'
+import {getInlineComments} from './comment-util'
 
 export const terminator: ASTObject<NoData> = {
   type: 'terminator',

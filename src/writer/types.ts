@@ -1,6 +1,8 @@
+export type ScopeDefinition = ASTObject & {toString(): string; length: number}
+
 export interface TraverseScope {
   [variableName: string]:
-    | ASTObject & {toString(): string; length: number}
+    | ScopeDefinition
     | undefined
 }
 

@@ -1,33 +1,14 @@
-import {
-  ASTExpression,
-  ASTObject,
-  DeclarationData,
-  FunctionAST,
-  VariableData,
-} from '../types'
-import {defaultReduce} from '../writer'
+import {ASTExpression, ASTObject, DeclarationData, FunctionAST, VariableData, TraverseScope, TraverseState} from '../types'
+import {defaultReduce} from '../reducers'
 import {starter} from './starter'
 import {ast, statement} from '../statement'
-import {addToScope, inIsolatedScope} from '../scope'
-
-export const raw = (text: string): ASTObject<{text: string}> => ({
-  reduce: function reduce({processed, parts, ...context}) {
-    return {
-      ...context,
-      processed: [...processed, this],
-      parts: [...parts, text],
-    }
-  },
-  parts: [text],
-  data: {text},
-  type: 'raw',
-})
+import {addToScopeAndWrite, inIsolatedScope} from '../scope'
 
 export const declare = (
   variable: ASTExpression,
   initializer?: ASTExpression,
 ): ASTObject<DeclarationData> => ({
-  parts: initializer
+  parts: initializer !== undefined
     ? statement`declare ${variable}=${initializer}`
     : statement`declare ${variable}`,
   type: 'declaration',
@@ -38,7 +19,7 @@ export const declare = (
 export const declareVariable = (
   name: string,
   initializer?: ASTExpression,
-): ASTObject<DeclarationData> => declare(addToScope(name), initializer)
+): ASTObject<DeclarationData> => declare(addToScopeAndWrite(name), initializer)
 
 export const referenceVar = (
   name: string | number,
@@ -57,6 +38,19 @@ export const declareFunction = ({
   type: 'function',
   data: {name, body, as},
   reduce: defaultReduce,
-  parts: statement`function ${addToScope(name, as)} {
+  parts: statement`function ${addToScopeAndWrite(name, as)} {
 ${inIsolatedScope(body, name)}${starter}}`,
 })
+
+/* WIP:
+const functionCall = ({
+  name,
+  args,
+  comments,
+}) => ({
+  type: 'call',
+  data: {name, args, comments},
+  reduce: defaultReduce,
+  parts: statement`${(ctx) => ctx[name] || name} ${args}${comments && ` # ${comments}`}`
+})
+*/

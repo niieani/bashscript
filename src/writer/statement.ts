@@ -1,22 +1,11 @@
-import {ASTExpression, ASTList, ASTObject, TraverseState} from './types'
+import {ASTExpression, ASTObject} from './types'
 import {starter} from './syntax/starter'
 import {terminator} from './syntax/terminator'
-import {reduceAST} from './writer'
 import {combineAlternate} from '../util/array'
-import {
-  coerceStringToAST,
-  ensureASTObject,
-  shouldTreatAsPureText,
-} from './context'
-
-export const astGroup = (
-  ...children: ASTList
-): ASTObject<{children: ASTList}> => ({
-  type: 'group',
-  data: {children},
-  reduce: (context: TraverseState): TraverseState =>
-    reduceAST(children, context),
-})
+import {coerceStringToAST, shouldTreatAsPureText} from './context-util'
+import {astGroup} from './context-util'
+import {ensureASTObject} from './context-util'
+import {TraverseScope, TraverseState} from './types'
 
 /**
  * Template string for creating AST from nodes/strings and functions
@@ -26,9 +15,7 @@ export const ast = (
   ...parts: Array<ASTExpression | undefined>
 ): Array<ASTObject> =>
   parts.every((part) => typeof part !== 'function')
-    ? combineAlternate(Array.from(strings), parts.flatten(1) as Array<
-        string | ASTObject
-      >)
+    ? combineAlternate(Array.from(strings), parts.flatten(1) as Array<string | ASTObject>)
         .filter(
           (node) =>
             node !== undefined &&
@@ -62,6 +49,6 @@ export const statement = (
   return [
     ...(first && first.type !== 'starter' ? [starter] : []),
     ...applied,
-    ...(last && last.type !== 'terminator' ? [terminator] : []),
+    ...(!last || last.type !== 'terminator' ? [terminator] : []),
   ]
 }

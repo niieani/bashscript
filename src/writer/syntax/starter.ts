@@ -4,9 +4,9 @@ import {findLastIndex, last} from '../../util/array'
 export const newLine = '\n'
 export const semi = '; '
 
-// ? do we mark start of content flow (terminated by \n) vs inline content (a; b;)?
+// TODO: should we differentiate start of content flow (terminated by \n) vs inline content (a; b;)?
 /**
- * marks the start of indented content flow
+ * marks the start of a new statement in indented content flow
  */
 export const starter: ASTObject<NoData> = {
   type: 'starter',

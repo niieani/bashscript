@@ -92,7 +92,8 @@ exports[`writer declaration 1`] = `
 
 exports[`writer function declaration 1`] = `
 "function example {
-  echo \\"this is awesome\\"}
+  echo \\"this is awesome\\"
+}
 "
 `;
 
@@ -102,7 +103,10 @@ echo example
 "
 `;
 
-exports[`writer statement 1`] = `"echo test"`;
+exports[`writer statement 1`] = `
+"echo test
+"
+`;
 
 exports[`writer statement with raw 1`] = `
 "echo raw test
