@@ -1,6 +1,6 @@
 import {write} from './util'
 
-echo('hello')
+write('hello')
 
 // this won't work yet:
 const x = 123;

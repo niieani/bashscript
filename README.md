@@ -1,34 +1,55 @@
-# JavaScript to Bash
+# BashScript
 
-function calls can be calls to bash functions
+A JavaScript/TypeScript to `bash` transpiler. Work in progress.
+
+Because.
+
+## Examples
+
+### Function invocation
+
+Function calls are transpilled as calls to bash functions/commands
 e.g.
 
-```
-# IN
+#### input
+
+```typescript
 echo('hi')
-# => OUT
+```
+
+#### output
+
+```bash
 echo hi
 ```
 
 if the call is used in the position of parameter or assignment:
 e.g.
 
-```
-# IN
+#### input
+
+```typescript
 const out = concat('hi', 'ho')
-# => OUT
+```
+
+#### output
+
+```bash
 declare out = $(concat 'hi' 'ho')
 ```
 
-## functions:
+### Function declaration
 
-IN
-```js
+#### input
+
+```typescript
 function concat(a, b) {
   return `${a}${b}`
 }
 ```
-=> OUT
+
+#### output
+
 ```bash
 function concat {
   local a="${1}"
@@ -37,9 +58,69 @@ function concat {
 }
 ```
 
-## lambdas:
+### Invoking properties
 
-IN
+#### input
+
+```typescript
+const a = 'abc'
+const b = a.toLowercase()
+```
+
+#### output
+
+```bash
+declare a='abc'
+declare b="$(__callProperty a toLowercase)"
+```
+
+### Invoking properties with parameters
+
+#### input
+
+```js
+const arr = ['abc']
+arr.push('xyz')
+```
+
+#### output
+
+```bash
+declare arr=('abc')
+__callProperty arr push 'xyz'
+```
+
+### Operators
+
+#### input
+
+```typescript
+const a = 'abc' + 'xyz'
+```
+
+#### output
+
+```bash
+declare a="$(__operator_addition 'abc' 'zyx')"
+```
+
+#### output helpers
+```bash
+# e.g.
+__callProperty() {
+  if isArray arr
+  then
+    if property === 'push'
+    then
+      arr+=("${arr[@]}")
+    fi
+  fi
+}
+```
+
+### Lambda functions
+
+#### input
 
 ```js
 const concat = (a) => {
@@ -52,7 +133,8 @@ const withOne = concat('one')
 const result = withOne('two')
 ```
 
-=> OUT
+#### output
+
 ```bash
 function concat {
   # params:
@@ -92,61 +174,19 @@ declare withOne="$(concat 'one')"
 declare result="$(__callVar withOne 'two')"
 ```
 
+### Lambdas with scoped variables
 
-```js
-const a = 'abc'
-const b = a.toLowercase()
-```
-=> OUT
-```bash
-declare a='abc'
-declare b="$(__callProperty a toLowercase)"
-```
+#### input
 
-IN
-```js
-const a = 'abc' + 'xyz'
-```
-=> OUT
-```bash
-declare a="$(__operator_addition 'abc' 'zyx')"
-```
-
-IN
-```js
-const arr = ['abc']
-arr.push('xyz')
-```
-
-=> OUT
-```bash
-declare arr=('abc')
-__callProperty arr push 'xyz'
-```
-
-OUT helper
-```bash
-# e.g.
-__callProperty() {
-  if isArray arr
-  then
-    if property === 'push'
-    then
-      arr+=("${arr[@]}")
-    fi
-  fi
-}
-```
-
-IN
-```js
+```typescript
 const arr = [1, 2, 3]
 const result = arr
   .map(num => num + 1)
   .map(num => num - 1)
 ```
 
-=> OUT
+#### output
+
 ```bash
 declare declaration=(1 2 3)
 declare arr="$(declare -p declaration)"
