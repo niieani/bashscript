@@ -7,24 +7,52 @@
   "private": false,
   "scripts": {
     "start": "ts-node src/index",
+    "ide": "ts-node $NODE_DEBUG_OPTION src/index",
+    "test": "jest",
+    "build:modules": "tsc --project . --outDir dist/es --module esnext",
+    "build:commonjs": "tsc --project . --outDir dist/commonjs",
     "jest-debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
-    "pretty": "prettier --write \"./src/**/*.ts\""
+    "pretty": "prettier --write \"./src/**/*.ts\"",
+    "madge": "madge --circular src/index.ts",
+    "preparcel:repl": "parcel build --out-file editor.worker.js node_modules/monaco-editor/esm/vs/editor/editor.worker && mv dist/editor.worker*.js dist/editor.worker.js && parcel build --out-file ts.worker.js node_modules/monaco-editor/esm/vs/language/typescript/ts.worker && mv dist/ts.worker*.js dist/ts.worker.js",
+    "parcel:repl": "node --max-old-space-size=4096 node_modules/.bin/parcel serve repl/index.html",
+    "repl:watch": "webpack-serve",
+    "repl:build": "del docs && yarn webpack",
+    "webpack": "NODE_ENV=production webpack"
   },
   "dependencies": {
     "acorn": "5.5.3",
     "prettier": "1.12.1",
     "ramda": "0.25.0",
     "ts-simple-ast": "10.5.0",
+    "tslib": "1.9.0",
     "typescript": "2.8.3"
   },
   "devDependencies": {
     "@types/acorn": "4.0.3",
+    "@types/codemirror": "0.0.56",
     "@types/jest": "22.2.3",
-    "@types/node": "10.0.0",
+    "@types/node": "^9",
     "@types/ramda": "0.25.24",
+    "codemirror": "5.37.0",
+    "css-loader": "0.28.11",
+    "del-cli": "1.1.0",
+    "hard-source-webpack-plugin": "0.6.4",
+    "html-webpack-plugin": "3.2.0",
     "jest": "22.4.3",
+    "madge": "3.0.1",
+    "monaco-editor": "0.12.0",
+    "monaco-editor-webpack-plugin": "1.1.0",
+    "parcel-bundler": "1.7.1",
+    "raw-loader": "0.5.1",
+    "semantic-release": "15.1.7",
+    "style-loader": "0.21.0",
     "ts-jest": "22.4.4",
-    "ts-node": "6.0.1"
+    "ts-loader": "4.2.0",
+    "ts-node": "6.0.1",
+    "webpack": "4.6.0",
+    "webpack-command": "0.1.0",
+    "webpack-serve": "0.3.1"
   },
   "jest": {
     "transform": {
