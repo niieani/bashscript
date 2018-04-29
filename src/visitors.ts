@@ -1,10 +1,11 @@
+import './util/flatmap'
 import * as AST from 'ts-simple-ast'
-import {extractedToRootScope} from './writer/scope'
-import {getNameGenerator} from './util/visitor'
 import * as ts from 'typescript'
+import {addToScopeAndReplaceUsage, addToScopeAndWrite, extractedToRootScope} from './writer/scope'
+import {getNameGenerator} from './util/visitor'
 import {flatmapSimple} from './util/flatmap-simple'
 import {getCommentObjects} from './util/ast'
-import {ASTObject} from './writer/types'
+import {ASTExpression, ASTObject} from './writer/types'
 import {
   declareFunction,
   declareVariable,
@@ -12,6 +13,7 @@ import {
 } from './writer/syntax/parts'
 import {comment} from './writer/syntax/comment'
 import {ast, statement} from './writer/statement'
+import {newLine} from './writer/syntax/starter'
 
 export type VisitorReturn = Array<ASTObject>
 
@@ -29,15 +31,25 @@ export function unsupportedVisitor(node: AST.Node): VisitorReturn {
   ]
 }
 
-export function nodeVisitor(node: AST.Node, rootScope = true): VisitorReturn {
+export function genericNodeVisitor(node: AST.Node, rootScope = true): VisitorReturn {
   switch (node.getKind()) {
     case ts.SyntaxKind.ExpressionStatement:
       return expressionVisitor(node as AST.Node<AST.ts.ExpressionStatement>)
     case ts.SyntaxKind.FunctionDeclaration:
       return functionVisitor(node as AST.FunctionDeclaration, rootScope)
+    case ts.SyntaxKind.VariableStatement:
+      return variableStatementVisitor(node as AST.VariableStatement)
+    case ts.SyntaxKind.ImportDeclaration:
+      return importDeclarationVisitor(node as AST.ImportDeclaration)
     default:
       return unsupportedVisitor(node)
   }
+}
+
+export let nodeVisitor = genericNodeVisitor
+
+export const setNodeVisitor = (visitor: (node: AST.Node, rootScope?: boolean) => VisitorReturn) => {
+  nodeVisitor = visitor
 }
 
 export function functionVisitor(
@@ -109,8 +121,10 @@ export function callExpressionVisitor(node: AST.CallExpression): VisitorReturn {
     argNodes.map((arg) => getCommentObjects(arg)),
   )
   const hasComments = argCommentsList.length > 0
-  const argComments = hasComments ? `# ${argCommentsList.join(', ')}` : ''
-  return statement`${callable} ${args.join(' ')}${argComments}`
+  const argComments = hasComments ? ` # ${argCommentsList.join(', ')}` : ''
+  const argsRaw = args.join(' ')
+  // TODO: functionCall({})
+  return statement`${(ctx) => ctx[callable] || callable}${argsRaw.length ? ` ${argsRaw}` : ''}${argComments}`
 }
 
 export function fileVisitor(node: AST.Node): VisitorReturn {
@@ -126,3 +140,41 @@ export function fileVisitor(node: AST.Node): VisitorReturn {
         .flatten(1)
   }
 }
+
+export function importDeclarationVisitor(node: AST.ImportDeclaration): VisitorReturn {
+  // return unsupportedVisitor(node)
+  const importFrom = node.getModuleSpecifierValue()
+  const importedMembers = node.getNamedImports()
+  return importedMembers.map((member) => {
+    const name = member.getName()
+    return addToScopeAndReplaceUsage(name, `@module "${importFrom}" ${name}`)
+  }).flatten(1)
+
+  // return importedMembers.map((member) => {
+  //   const name = member.getName()
+  //   return statement`${addToScopeAndReplaceUsage(name, `@module "${importFrom}" ${name}`)}`
+  // }).flatten(1)
+}
+
+export function variableStatementVisitor(node: AST.VariableStatement): VisitorReturn {
+  const list = node.getDeclarationList()
+  const declarations = list.getDeclarations()
+  return declarations.map((declaration) => {
+    const name = declaration.getName()
+    const initializer = declaration.getInitializer()
+    let value : ASTExpression | undefined = undefined
+    if (initializer) {
+      switch (initializer.getKind()) {
+        case ts.SyntaxKind.StringLiteral:
+          value = initializer.getText()
+          break
+        default:
+          value = comment(`Unsupported initializer type: ${initializer.getKindName()}`)
+          break
+      }
+    }
+    return declareVariable(name, value)
+  })
+}
+
+// AST
