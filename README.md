@@ -17,7 +17,7 @@ Also, because... why not? 🤓
 
 Not much works, but it's cool. :-)
 
-The current [REPL](https://niieani.github.io/bashscript/).
+Find it here: **[REPL](https://niieani.github.io/bashscript/)**.
 
 ## Specification (WIP)
 
@@ -50,7 +50,7 @@ const out = concat('hi', 'ho')
 #### output
 
 ```bash
-declare out = $(concat 'hi' 'ho')
+declare out=$(concat 'hi' 'ho')
 ```
 
 ### Function declaration
