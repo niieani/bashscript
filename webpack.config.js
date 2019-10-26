@@ -78,7 +78,7 @@ module.exports = {
       ],
     }),
     new MonacoEditorWebpackPlugin(webpack, {
-      languages: ['typescript'],
+      languages: ['typescript', 'shell'],
       features: [
         'bracketMatching',
         'caretOperations',
