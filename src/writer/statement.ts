@@ -15,7 +15,9 @@ export const ast = (
   ...parts: Array<ASTExpression | undefined>
 ): Array<ASTObject> =>
   parts.every((part) => typeof part !== 'function')
-    ? combineAlternate(Array.from(strings), parts.flatten(1) as Array<string | ASTObject>)
+    ? combineAlternate(Array.from(strings), parts.flat(1) as Array<
+        string | ASTObject
+      >)
         .filter(
           (node) =>
             node !== undefined &&

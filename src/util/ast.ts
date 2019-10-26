@@ -1,4 +1,4 @@
-import * as AST from 'ts-simple-ast'
+import * as AST from 'ts-morph'
 import * as acorn from 'acorn'
 import {comment} from '../writer/syntax/comment'
 import {ASTObject} from '../writer/types'

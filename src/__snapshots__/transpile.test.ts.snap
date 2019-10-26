@@ -8,9 +8,9 @@ exports[`transpile a larger program 1`] = `
 @module \\"./util\\" write 'hello'
 declare x=# Unsupported initializer type: NumericLiteral
 
-# I'm a comment
-# I'm a multiline comment
-#   ...indeed... 
+# // I'm a comment
+# /* I'm a multiline comment
+#    ...indeed... */
 function lol {
   declare one=\${1}
   declare two=\${2}

@@ -1,17 +1,14 @@
 import './index.css'
-import * as sourceValue from '!raw-loader!./repl'
+import sourceValue from '!raw-loader!./repl'
 
 declare var window: Window & {_sourceValue?: string}
 
 const init = async () => {
-  const sourceChanged = window._sourceValue == null || window._sourceValue !== sourceValue
+  const sourceChanged =
+    window._sourceValue == null || window._sourceValue !== sourceValue
   window._sourceValue = sourceValue
 
-  const [
-    {initLeft},
-    {initRight},
-    {transpileText},
-  ] = await Promise.all([
+  const [{initLeft}, {initRight}, {transpileText}] = await Promise.all([
     import('./monaco'),
     import('./codemirror'),
     import('./transpile'),

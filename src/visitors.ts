@@ -1,10 +1,12 @@
-import './util/flatmap'
-import * as AST from 'ts-simple-ast'
-import * as ts from 'typescript'
-import {addToScopeAndReplaceUsage, addToScopeAndWrite, extractedToRootScope} from './writer/scope'
+import * as AST from 'ts-morph'
+import {
+  addToScopeAndReplaceUsage,
+  addToScopeAndWrite,
+  extractedToRootScope,
+} from './writer/scope'
 import {getNameGenerator} from './util/visitor'
 import {flatmapSimple} from './util/flatmap-simple'
-import {getCommentObjects} from './util/ast'
+import {getCommentObjects, getComments} from './util/ast'
 import {ASTExpression, ASTObject} from './writer/types'
 import {
   declareFunction,
@@ -19,7 +21,7 @@ export type VisitorReturn = Array<ASTObject>
 
 export function unsupportedVisitor(node: AST.Node): VisitorReturn {
   return [
-    ...getCommentObjects(node),
+    // ...getCommentObjects(node),
     ...node
       .getText()
       .split('\n')
@@ -31,16 +33,33 @@ export function unsupportedVisitor(node: AST.Node): VisitorReturn {
   ]
 }
 
-export function genericNodeVisitor(node: AST.Node, rootScope = true): VisitorReturn {
+export function commentVisitor(node: AST.Node): VisitorReturn {
+  // return [...getCommentObjects(node)]
+  return [
+    // ...getCommentObjects(node),
+    ...node
+      .getText()
+      .split('\n')
+      .map((line) => comment(line)),
+  ]
+}
+
+export function genericNodeVisitor(
+  node: AST.Node,
+  rootScope = true,
+): VisitorReturn {
   switch (node.getKind()) {
-    case ts.SyntaxKind.ExpressionStatement:
+    case AST.SyntaxKind.ExpressionStatement:
       return expressionVisitor(node as AST.Node<AST.ts.ExpressionStatement>)
-    case ts.SyntaxKind.FunctionDeclaration:
+    case AST.SyntaxKind.FunctionDeclaration:
       return functionVisitor(node as AST.FunctionDeclaration, rootScope)
-    case ts.SyntaxKind.VariableStatement:
+    case AST.SyntaxKind.VariableStatement:
       return variableStatementVisitor(node as AST.VariableStatement)
-    case ts.SyntaxKind.ImportDeclaration:
+    case AST.SyntaxKind.ImportDeclaration:
       return importDeclarationVisitor(node as AST.ImportDeclaration)
+    case AST.SyntaxKind.MultiLineCommentTrivia:
+    case AST.SyntaxKind.SingleLineCommentTrivia:
+      return commentVisitor(node)
     default:
       return unsupportedVisitor(node)
   }
@@ -48,7 +67,9 @@ export function genericNodeVisitor(node: AST.Node, rootScope = true): VisitorRet
 
 export let nodeVisitor = genericNodeVisitor
 
-export const setNodeVisitor = (visitor: (node: AST.Node, rootScope?: boolean) => VisitorReturn) => {
+export const setNodeVisitor = (
+  visitor: (node: AST.Node, rootScope?: boolean) => VisitorReturn,
+) => {
   nodeVisitor = visitor
 }
 
@@ -59,6 +80,7 @@ export function functionVisitor(
   // const body = node.getBody() as AST.Block | undefined
   // if (!body) return empty
   const name = node.getName()
+  if (!name) return []
   const paramNodes = node.getParameters()
   const params = paramNodes.map((param, index) => {
     const name = param.getName() || '_'
@@ -71,12 +93,12 @@ export function functionVisitor(
   const innerStatements = node.getStatements()
   const transformedStatements = innerStatements
     .map((node) => nodeVisitor(node, false))
-    .flatten(1)
+    .flat(1)
 
   const getNameFromScope = getNameGenerator(name)
 
   const functionStatements = [
-    ...getCommentObjects(node),
+    // ...getCommentObjects(node),
     declareFunction({
       name,
       as: rootScope ? name : getNameFromScope(),
@@ -100,7 +122,7 @@ export function expressionVisitor(
   const expression = node.getChildAtIndex(0)!
   // console.log(expression)
   switch (expression.getKind()) {
-    case ts.SyntaxKind.CallExpression:
+    case AST.SyntaxKind.CallExpression:
       return [
         ...getCommentObjects(node),
         ...callExpressionVisitor(expression as AST.CallExpression),
@@ -124,52 +146,62 @@ export function callExpressionVisitor(node: AST.CallExpression): VisitorReturn {
   const argComments = hasComments ? ` # ${argCommentsList.join(', ')}` : ''
   const argsRaw = args.join(' ')
   // TODO: functionCall({})
-  return statement`${(ctx) => ctx[callable] || callable}${argsRaw.length ? ` ${argsRaw}` : ''}${argComments}`
+  return statement`${(ctx) => ctx[callable] || callable}${
+    argsRaw.length ? ` ${argsRaw}` : ''
+  }${argComments}`
 }
 
 export function fileVisitor(node: AST.Node): VisitorReturn {
   switch (node.getKind()) {
-    case ts.SyntaxKind.EndOfFileToken:
+    case AST.SyntaxKind.EndOfFileToken:
       return []
-    case ts.SyntaxKind.SyntaxList:
+    case AST.SyntaxKind.SyntaxList:
     default:
       const list = node as AST.SyntaxList
       return list
         .getChildren()
         .map((node) => nodeVisitor(node, true))
-        .flatten(1)
+        .flat(1)
   }
 }
 
-export function importDeclarationVisitor(node: AST.ImportDeclaration): VisitorReturn {
+export function importDeclarationVisitor(
+  node: AST.ImportDeclaration,
+): VisitorReturn {
   // return unsupportedVisitor(node)
   const importFrom = node.getModuleSpecifierValue()
   const importedMembers = node.getNamedImports()
-  return importedMembers.map((member) => {
-    const name = member.getName()
-    return addToScopeAndReplaceUsage(name, `@module "${importFrom}" ${name}`)
-  }).flatten(1)
+  return importedMembers
+    .map((member) => {
+      const name = member.getName()
+      return addToScopeAndReplaceUsage(name, `@module "${importFrom}" ${name}`)
+    })
+    .flat(1)
 
   // return importedMembers.map((member) => {
   //   const name = member.getName()
   //   return statement`${addToScopeAndReplaceUsage(name, `@module "${importFrom}" ${name}`)}`
-  // }).flatten(1)
+  // }).flat(1)
 }
 
-export function variableStatementVisitor(node: AST.VariableStatement): VisitorReturn {
+export function variableStatementVisitor(
+  node: AST.VariableStatement,
+): VisitorReturn {
   const list = node.getDeclarationList()
   const declarations = list.getDeclarations()
   return declarations.map((declaration) => {
     const name = declaration.getName()
     const initializer = declaration.getInitializer()
-    let value : ASTExpression | undefined = undefined
+    let value: ASTExpression | undefined = undefined
     if (initializer) {
       switch (initializer.getKind()) {
-        case ts.SyntaxKind.StringLiteral:
+        case AST.SyntaxKind.StringLiteral:
           value = initializer.getText()
           break
         default:
-          value = comment(`Unsupported initializer type: ${initializer.getKindName()}`)
+          value = comment(
+            `Unsupported initializer type: ${initializer.getKindName()}`,
+          )
           break
       }
     }

@@ -1,4 +1,3 @@
-import '../util/flatmap'
 import {print} from './writer'
 import {declareFunction, declareVariable} from './syntax/parts'
 import {terminator} from './syntax/terminator'
