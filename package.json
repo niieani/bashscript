@@ -22,7 +22,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "acorn": "7.1.0",
+    "acorn": "7.1.1",
     "prettier": "1.18.2",
     "ramda": "0.26.1",
     "ts-morph": "^4.3.2",
