@@ -1,0 +1,2 @@
+(self.webpackJsonp=self.webpackJsonp||[]).push([[1233],{1233:(e,t,n)=>{"use strict";n.r(t),n.d(t,{initRight:()=>d});var a=n(21425);const s=document.getElementById("right");let l;const d=e=>l?(e&&l.getModel().setValue(e),l):(l=a.editor.create(s,{value:e||"",language:"shell",minimap:{enabled:!1},formatOnType:!0,scrollBeyondLastLine:!1,readOnly:!0,theme:"vs-dark"}),window.addEventListener("resize",()=>{l.layout()}),l)}}]);
+//# sourceMappingURL=1233.js.map
