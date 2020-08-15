@@ -9,7 +9,10 @@ export const shouldTreatAsPureText = (
 ): textOrAST is string =>
   typeof textOrAST === 'string' || textOrAST.hasOwnProperty('toString')
 
-export const coerceStringToAST = <T>(textOrAST: ASTObject<T> | string) =>
+export const coerceStringToAST = <T extends ASTExpression>(
+  textOrAST: T,
+): T extends string ? ASTObject<{text: string}> : T =>
+  // @ts-ignore not sure what's going on here, but it works:
   shouldTreatAsPureText(textOrAST) ? raw(textOrAST) : textOrAST
 
 export const astGroup = (

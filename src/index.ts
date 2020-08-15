@@ -4,6 +4,6 @@ import * as path from 'path'
 export const getFile = (file: string) => {
   const tsAST = new Project()
   const sourceDir = path.resolve(__dirname, '..', 'fixtures')
-  tsAST.addExistingSourceFiles(`${sourceDir}/example/**/*.ts`)
+  tsAST.addDirectoryAtPath(`${sourceDir}/example`, {recursive: true})
   return tsAST.getSourceFile(file)
 }

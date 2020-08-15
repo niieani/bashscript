@@ -111,8 +111,10 @@ export function functionVisitor(
 
   return rootScope
     ? functionStatements
-    : ast`${extractedToRootScope(functionStatements)}${getNameFromScope(
-        (name) => comment(`function declaration extracted, see: ${name}`),
+    : ast`${extractedToRootScope(
+        functionStatements,
+      )}${getNameFromScope((name) =>
+        comment(`function declaration extracted, see: ${name}`),
       )}`
 }
 

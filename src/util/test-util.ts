@@ -1,9 +1,8 @@
 import {Project} from 'ts-morph'
-import {SourceFile} from 'ts-morph'
 
 export const makeTestFile = (fileContents: string) => {
   const project = new Project({
-    useVirtualFileSystem: true,
+    useInMemoryFileSystem: true,
     addFilesFromTsConfig: false,
     compilerOptions: {
       strict: true,

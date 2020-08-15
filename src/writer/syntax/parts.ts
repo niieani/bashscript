@@ -1,4 +1,12 @@
-import {ASTExpression, ASTObject, DeclarationData, FunctionAST, VariableData, TraverseScope, TraverseState} from '../types'
+import {
+  ASTExpression,
+  ASTObject,
+  DeclarationData,
+  FunctionAST,
+  VariableData,
+  TraverseScope,
+  TraverseState,
+} from '../types'
 import {defaultReduce} from '../reducers'
 import {starter} from './starter'
 import {ast, statement} from '../statement'
@@ -8,9 +16,10 @@ export const declare = (
   variable: ASTExpression,
   initializer?: ASTExpression,
 ): ASTObject<DeclarationData> => ({
-  parts: initializer !== undefined
-    ? statement`declare ${variable}=${initializer}`
-    : statement`declare ${variable}`,
+  parts:
+    initializer !== undefined
+      ? statement`declare ${variable}=${initializer}`
+      : statement`declare ${variable}`,
   type: 'declaration',
   data: {variable, initializer},
   reduce: defaultReduce,
