@@ -1,6 +1,4 @@
 {
-  "typescript.experimental.syntaxFolding": true,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.formatOnSave": true,
-  "prettier.eslintIntegration": false
+  "editor.formatOnSave": true
 }
