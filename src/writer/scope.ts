@@ -1,7 +1,13 @@
-import {ASTExpression, ASTObject, DefinedReducer, ScopeContext, TraverseState} from './types'
+import {
+  ASTExpression,
+  ASTObject,
+  DefinedReducer,
+  ScopeContext,
+  TraverseState,
+} from './types'
 import {ensureArray} from '../util/array'
 import {defineReducer, reduceAST} from './reducers'
-import {newLine} from './syntax/starter'
+import {NEW_LINE} from './syntax/starter'
 import {createScopeProxy} from './scope-proxy'
 import {print} from './writer'
 
@@ -70,7 +76,7 @@ export const addToScopeAndReplaceUsage = (name: string, usage: ASTExpression) =>
           }),
         }
       },
-    })
+    }),
   )
 
 /**
@@ -138,7 +144,7 @@ export const extractedToRootScope = (body: ASTExpression) =>
             // we move normal parts to extracted ones:
             ...extractedContext.parts,
             ...extractedContext.partsToExtract,
-            newLine,
+            NEW_LINE,
           ],
           parts,
           processed: extractedContext.processed,
@@ -153,5 +159,3 @@ export const scopeHelper = (context: TraverseState) =>
     ...context.scope,
     _context: context,
   } as ScopeContext)
-
-

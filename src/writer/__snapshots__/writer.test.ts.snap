@@ -10,7 +10,8 @@ Object {
   },
   "parts": Array [
     "",
-    "# testing",
+    " # testing
+",
     "
 ",
   ],
@@ -28,10 +29,12 @@ Object {
     },
     Object {
       "data": Object {
-        "text": "# testing",
+        "text": " # testing
+",
       },
       "parts": Array [
-        "# testing",
+        " # testing
+",
       ],
       "reduce": [Function],
       "type": "raw",
@@ -47,7 +50,8 @@ Object {
       },
       "parts": Array [
         [Function],
-        "# testing",
+        " # testing
+",
         Object {
           "data": Object {},
           "reduce": [Function],
@@ -66,14 +70,16 @@ Object {
 exports[`writer access the AST type of declared function 1`] = `
 "function setMood {
   declare mood=$1
-  # this will be a recursive call
+   # this will be a recursive call
+
   setMood \\"awesome, because it's a function\\"
 }
 "
 `;
 
 exports[`writer comment 1`] = `
-"# testing
+" # testing
+
 "
 `;
 

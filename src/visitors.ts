@@ -9,13 +9,16 @@ import {flatmapSimple} from './util/flatmap-simple'
 import {getCommentObjects, getComments} from './util/ast'
 import {ASTExpression, ASTObject} from './writer/types'
 import {
+  callExpression,
   declareFunction,
   declareVariable,
+  escapedString,
+  inlineCallExpression,
   referenceVar,
 } from './writer/syntax/parts'
 import {comment} from './writer/syntax/comment'
 import {ast, statement} from './writer/statement'
-import {newLine} from './writer/syntax/starter'
+import {NEW_LINE} from './writer/syntax/starter'
 
 export type VisitorReturn = Array<ASTObject>
 
@@ -135,22 +138,22 @@ export function expressionVisitor(
   }
 }
 
-export function callExpressionVisitor(node: AST.CallExpression): VisitorReturn {
+export function callExpressionVisitor(node: AST.CallExpression) {
   const identNode = node.getExpression()
   const argNodes = node.getArguments()
   const callable = identNode.getText()
   // TODO: map args depending on their type, i.e. passthrough StringLiteral
-  const args = argNodes.map((arg) => arg.getText())
+  const args = argNodes.map((arg, index) => getBashValue(arg))
   const argCommentsList = flatmapSimple(
     argNodes.map((arg) => getCommentObjects(arg)),
   )
   const hasComments = argCommentsList.length > 0
   const argComments = hasComments ? ` # ${argCommentsList.join(', ')}` : ''
-  const argsRaw = args.join(' ')
-  // TODO: functionCall({})
-  return statement`${(ctx) => ctx[callable] || callable}${
-    argsRaw.length ? ` ${argsRaw}` : ''
-  }${argComments}`
+  // const argsRaw = args.join(' ')
+  return [callExpression({callable, args, argComments})]
+  // return statement`${(ctx) => ctx[callable] || callable}${
+  //   argsRaw.length ? ` ${argsRaw}` : ''
+  // }${argComments}`
 }
 
 export function fileVisitor(node: AST.Node): VisitorReturn {
@@ -165,6 +168,19 @@ export function fileVisitor(node: AST.Node): VisitorReturn {
         .map((node) => nodeVisitor(node, true))
         .flat(1)
   }
+}
+
+export function getBashValue(
+  expression: AST.Node<AST.ts.Node>,
+): Array<ASTObject> {
+  if (AST.Node.isStringLiteral(expression)) {
+    const stringValue = expression.getLiteralValue()
+    return [escapedString(stringValue)]
+  }
+  if (AST.Node.isCallExpression(expression)) {
+    return callExpressionVisitor(expression)
+  }
+  return [comment(`Unsupported type: ${expression.getKindName()}`)]
 }
 
 export function importDeclarationVisitor(
@@ -194,21 +210,16 @@ export function variableStatementVisitor(
   return declarations.map((declaration) => {
     const name = declaration.getName()
     const initializer = declaration.getInitializer()
-    let value: ASTExpression | undefined = undefined
-    if (initializer) {
-      switch (initializer.getKind()) {
-        case AST.SyntaxKind.StringLiteral:
-          value = initializer.getText()
-          break
-        default:
-          value = comment(
-            `Unsupported initializer type: ${initializer.getKindName()}`,
-          )
-          break
-      }
+    let value = initializer && getBashValue(initializer)
+    if (value) {
+      value = value.map((val) =>
+        val.type === 'call-expression' ? inlineCallExpression(val) : val,
+      )
     }
+    // if (value)
+    // if (AST.Node.isNumericLiteral(initializer)) {
+    //   const numericValue = String(initializer.getLiteralValue())
+    // }
     return declareVariable(name, value)
   })
 }
-
-// AST

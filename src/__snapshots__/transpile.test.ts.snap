@@ -2,26 +2,33 @@
 
 exports[`transpile a larger program 1`] = `
 "function nestedFunctions.nestedOne {
-  echo 'hello'
+  echo 'hello' 
 }
 
-@module \\"./util\\" write 'hello'
-declare x=# Unsupported initializer type: NumericLiteral
+@module \\"./util\\" write 'hello' 
+declare x= # Unsupported type: NumericLiteral
 
-# // I'm a comment
-# /* I'm a multiline comment
-#    ...indeed... */
+
+ # // I'm a comment
+
+ # /* I'm a multiline comment
+
+ #    ...indeed... */
+
 function lol {
   declare one=\${1}
   declare two=\${2}
-  # lol
-  echo 'x'
-  # after
-  echo 'hmm'
+   # lol
+
+  echo 'x' 
+   # after
+
+  echo 'hmm' 
 }
 function nestedFunctions {
-  echo 'hi'
-  # function declaration extracted, see: nestedFunctions.nestedOne
+  echo 'hi' 
+   # function declaration extracted, see: nestedFunctions.nestedOne
+
 }
 "
 `;

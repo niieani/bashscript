@@ -1,6 +1,6 @@
 import {print} from './writer'
 import {declareFunction, declareVariable} from './syntax/parts'
-import {terminator} from './syntax/terminator'
+import {TERMINATOR} from './syntax/terminator'
 import {comment} from './syntax/comment'
 import {statement} from './statement'
 import {ensureASTObject} from './context-util'
@@ -17,7 +17,7 @@ describe('writer', () => {
   })
 
   test('terminator', () => {
-    expect(print([terminator])).toMatchSnapshot()
+    expect(print([TERMINATOR])).toMatchSnapshot()
   })
 
   test('declaration', () => {
@@ -72,8 +72,9 @@ describe('writer', () => {
             declareVariable('mood', raw('$1')),
             comment('this will be a recursive call'),
             ({setMood}) =>
-              statement`${setMood} "awesome, because it's a ${setMood &&
-                setMood.type}"`,
+              statement`${setMood} "awesome, because it's a ${
+                setMood && setMood.type
+              }"`,
           ],
         }),
       ]),

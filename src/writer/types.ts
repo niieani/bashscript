@@ -1,9 +1,7 @@
 export type ScopeDefinition = ASTObject & {toString(): string; length: number}
 
 export interface TraverseScope {
-  [variableName: string]:
-    | ScopeDefinition
-    | undefined
+  [variableName: string]: ScopeDefinition | undefined
 }
 
 export interface TraverseState {
@@ -56,6 +54,10 @@ export type ASTType =
   | 'function'
   | 'unknown'
   | 'variable'
+  | 'string-literal'
+  | 'call-expression'
+  | 'inline-call-expression'
+  | 'argument-separator'
 
 export type CommentData = {comment: string}
 export type NoData = {}

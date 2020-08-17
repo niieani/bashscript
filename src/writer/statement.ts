@@ -1,6 +1,6 @@
 import {ASTExpression, ASTObject} from './types'
-import {starter} from './syntax/starter'
-import {terminator} from './syntax/terminator'
+import {STARTER} from './syntax/starter'
+import {TERMINATOR} from './syntax/terminator'
 import {combineAlternate} from '../util/array'
 import {coerceStringToAST, shouldTreatAsPureText} from './context-util'
 import {astGroup} from './context-util'
@@ -15,9 +15,10 @@ export const ast = (
   ...parts: Array<ASTExpression | undefined>
 ): Array<ASTObject> =>
   parts.every((part) => typeof part !== 'function')
-    ? combineAlternate(Array.from(strings), parts.flat(1) as Array<
-        string | ASTObject
-      >)
+    ? combineAlternate(
+        Array.from(strings),
+        parts.flat(1) as Array<string | ASTObject>,
+      )
         .filter(
           (node) =>
             node !== undefined &&
@@ -49,8 +50,8 @@ export const statement = (
   const [first, ...rest] = applied
   const [last] = rest.reverse()
   return [
-    ...(first && first.type !== 'starter' ? [starter] : []),
+    ...(first && first.type !== 'starter' ? [STARTER] : []),
     ...applied,
-    ...(!last || last.type !== 'terminator' ? [terminator] : []),
+    ...(!last || last.type !== 'terminator' ? [TERMINATOR] : []),
   ]
 }

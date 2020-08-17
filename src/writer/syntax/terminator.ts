@@ -1,9 +1,9 @@
 import {ASTObject, NoData, TraverseState} from '../types'
-import {newLine} from './starter'
+import {NEW_LINE} from './starter'
 import {findLastIndex} from '../../util/array'
 import {getInlineComments} from './comment-util'
 
-export const terminator: ASTObject<NoData> = {
+export const TERMINATOR: ASTObject<NoData> = {
   type: 'terminator',
   data: {},
   reduce: terminatorReduce,
@@ -35,7 +35,7 @@ export function terminatorReduce(
     ...context,
     processed: [...processed, this],
     parts: comments.length
-      ? [...parts, newLine, commentText]
-      : [...parts, newLine],
+      ? [...parts, NEW_LINE, commentText]
+      : [...parts, NEW_LINE],
   }
 }

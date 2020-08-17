@@ -1,14 +1,14 @@
 import {ASTObject, NoData, ScopeContext, TraverseState} from '../types'
 import {findLastIndex, last} from '../../util/array'
 
-export const newLine = '\n'
-export const semi = '; '
+export const NEW_LINE = '\n'
+export const SEMI = '; '
 
 // TODO: should we differentiate start of content flow (terminated by \n) vs inline content (a; b;)?
 /**
  * marks the start of a new statement in indented content flow
  */
-export const starter: ASTObject<NoData> = {
+export const STARTER: ASTObject<NoData> = {
   type: 'starter',
   data: {},
   reduce(context): TraverseState {
@@ -27,8 +27,8 @@ export const lastStarterAt = findLastIndex(
 
 export const isBeginningOfLine = (context: TraverseState) => {
   const token = last(context.parts)
-  return !token || token === newLine
+  return !token || token === NEW_LINE
 }
 
 export const ensureStarter = ({_context: context}: ScopeContext) =>
-  context.indent > 0 && isBeginningOfLine(context) ? starter : ''
+  context.indent > 0 && isBeginningOfLine(context) ? STARTER : ''

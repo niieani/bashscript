@@ -1,6 +1,6 @@
 import {ASTObject} from '../types'
 import {ensureStarter} from './starter'
-import {terminator} from './terminator'
+import {TERMINATOR} from './terminator'
 import {defaultReduce} from '../reducers'
 
 export const comment = (
@@ -9,8 +9,6 @@ export const comment = (
 ): ASTObject<{comment: string}> => ({
   reduce: defaultReduce,
   type: 'comment',
-  parts: [ensureStarter, `#${withSpace ? ' ' : ''}${comment}`, terminator],
+  parts: [ensureStarter, `\ #${withSpace ? ' ' : ''}${comment}\n`, TERMINATOR],
   data: {comment},
 })
-
-
