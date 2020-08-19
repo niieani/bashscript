@@ -2,11 +2,19 @@ interface AstNode<Type extends string = string> {
   type: Type
 }
 
-type Expression = VariableDeclaration | FunctionDeclaration | CallExpression
+// expressions legal inside of a function body:
+type FunctionBodyExpression = VariableDeclaration | CallExpression
+type FileExpression = FunctionBodyExpression | FunctionDeclaration
 
 interface BashFile extends AstNode<'File'> {
-  statements: Array<Expression>
+  statements: Array<FileExpression>
 }
+
+type AssignmentValue =
+  | undefined
+  | StringLiteral
+  | ArrayLiteral
+  | TemplateLiteral
 
 /**
  * @example
@@ -16,8 +24,32 @@ interface BashFile extends AstNode<'File'> {
  */
 interface VariableDeclaration extends AstNode<'VariableDeclaration'> {
   identifier: VariableIdentifier
-  initializer: undefined | StringLiteral | ArrayLiteral
-  // TODO: probably not needed, we can infer from initializer type: valueType: 'STRING' | 'NUMBER' | 'ARRAY'
+  initializer: AssignmentValue
+  // TODO: consider valueType: 'STRING' | 'NUMBER' | 'ARRAY'; probably not needed, we can infer from initializer type
+}
+
+/**
+ * @example
+ * ```shell
+ * declare name="${1:-default}"
+ * ```
+ */
+interface Parameter extends AstNode<'ArgumentDeclaration'> {
+  identifier: VariableIdentifier
+  initializer: AssignmentValue
+  // TODO: consider valueType: 'STRING' | 'NUMBER' | 'ARRAY'; probably not needed, we can infer from initializer type
+}
+
+/**
+ * @example
+ * ```shell
+ * name=value
+ * ```
+ */
+interface AssignmentExpression extends AstNode<'AssignmentExpression'> {
+  identifier: VariableIdentifier
+  value: AssignmentValue
+  operator: '=' | '+='
 }
 
 /**
@@ -31,8 +63,9 @@ interface VariableDeclaration extends AstNode<'VariableDeclaration'> {
  */
 interface FunctionDeclaration extends AstNode<'FunctionDeclaration'> {
   name: FunctionIdentifier
-  parameters: Array<VariableDeclaration>
-  statements: Array<Expression>
+  /** parameters are not a native bash feature, but we want this in the writer for ease of use */
+  parameters: Array<Parameter>
+  statements: Array<FunctionBodyExpression>
 }
 
 /**
@@ -118,6 +151,7 @@ const WRITERS = {
   FunctionDeclaration: writeFunctionDeclaration,
   CallExpression: unimplementedWriter,
   ArrayLiteral: unimplementedWriter,
+  TemplateLiteral: unimplementedWriter,
 }
 
 type NodeWriters = typeof WRITERS
@@ -144,7 +178,7 @@ function writeVariableDeclaration({
   identifier,
   initializer,
 }: VariableDeclaration) {
-  let output = 'declare ${identifier}'
+  let output = `declare ${identifier}`
   if (initializer) {
     output += `=${write(initializer)}`
   }
@@ -154,6 +188,10 @@ function writeVariableDeclaration({
 function writeFunctionDeclaration(node: FunctionDeclaration) {
   return 'TODO'
 }
+
+// NOTE: maybe it could be using 'typescript' directly as a TS plugin?
+// then we could also add red squiggly marks for not implemented features, by node type in a given position!
+// https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin
 
 function writeFile(file: BashFile) {
   const statements = file.statements.map((statement) => write(statement))
