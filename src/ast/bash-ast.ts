@@ -1,13 +1,7 @@
-interface AstNode<Type extends string = string> {
+import {combineAlternate} from '../util/array'
+
+interface AstNode<Type extends string> {
   type: Type
-}
-
-// expressions legal inside of a function body:
-type FunctionBodyExpression = VariableDeclaration | CallExpression
-type FileExpression = FunctionBodyExpression | FunctionDeclaration
-
-interface BashFile extends AstNode<'File'> {
-  statements: Array<FileExpression>
 }
 
 type AssignmentValue =
@@ -19,25 +13,156 @@ type AssignmentValue =
 /**
  * @example
  * ```shell
- * declare name=value
+ * declare name="${1:-default}"
  * ```
  */
-interface VariableDeclaration extends AstNode<'VariableDeclaration'> {
+interface Parameter extends AstNode<'Parameter'> {
   identifier: VariableIdentifier
-  initializer: AssignmentValue
-  // TODO: consider valueType: 'STRING' | 'NUMBER' | 'ARRAY'; probably not needed, we can infer from initializer type
+  valueType?: 'STRING' | 'INTEGER' | 'ARRAY' | 'ASSOCIATIVE_ARRAY'
+  // TODO: default value
+  // TODO: valueType: 'STRING' | 'NUMBER' | 'ARRAY'
+  // although maybe for readonly it makes sense?
+}
+
+const DECLARE_FLAGS = {
+  STRING: [],
+  INTEGER: ['i'],
+  ARRAY: ['a'],
+  ASSOCIATIVE_ARRAY: ['A'],
+}
+
+function writeParameter(
+  {identifier, valueType = 'STRING'}: Parameter,
+  index: number,
+): string {
+  const flags = DECLARE_FLAGS[valueType]
+  const flagArg = flags.length > 0 ? `-${flags.join('')} ` : ''
+  return `local ${flagArg}${write(identifier)}="\${${index}}"`
+  // if (default) {
+  //   output += `=${write(initializer)}`
+  // }
 }
 
 /**
  * @example
  * ```shell
- * declare name="${1:-default}"
+ * "something ${variable} $(command arg) ${variable:-default}"
  * ```
  */
-interface Parameter extends AstNode<'ArgumentDeclaration'> {
+interface TemplateLiteral extends AstNode<'TemplateLiteral'> {
+  expressions: Array<VariableReference | CallReference> // TODO: add expressions like $(( 1 + 2 ))
+  quasis: Array<TemplateElement>
+}
+
+function writeTemplateLiteral({expressions, quasis}: TemplateLiteral): string {
+  const expressionOutput = expressions.map((expression) => write(expression))
+  const quasisOutput = quasis.map((quasis) => write(quasis))
+  return `"${combineAlternate(quasisOutput, expressionOutput).join('')}"`
+}
+
+interface TemplateElement extends AstNode<'TemplateElement'> {
+  value: string
+}
+
+function writeTemplateElement({value}: TemplateElement): string {
+  return value
+}
+
+interface StringLiteral extends AstNode<'StringLiteral'> {
+  style: 'UNQUOTED' | 'SINGLE_QUOTED' | 'DOUBLE_QUOTED' | 'HEREDOC'
+  value: string
+}
+
+const SH_ESCAPED_SLASH = String.fromCodePoint(92) + "'"
+
+function writeStringLiteral({style, value}: StringLiteral): string {
+  switch (style) {
+    // TODO: add support for all types
+    case 'SINGLE_QUOTED':
+    default:
+      return `'${value.replace(/'/g, `'${SH_ESCAPED_SLASH}'`)}'`
+  }
+}
+
+/**
+ * @example
+ * ```shell
+ * ("value" "another value")
+ * ```
+ */
+interface ArrayLiteral extends AstNode<'ArrayLiteral'> {
+  elements: Array<StringLiteral | TemplateLiteral>
+}
+
+function writeArrayLiteral({elements}: ArrayLiteral): string {
+  return `(${elements.map((element) => write(element)).join(' ')})`
+}
+
+/**
+ * The reference to a variable
+ * @example ${name}
+ * @example ${1}
+ */
+interface VariableReference extends AstNode<'VariableReference'> {
   identifier: VariableIdentifier
-  initializer: AssignmentValue
-  // TODO: consider valueType: 'STRING' | 'NUMBER' | 'ARRAY'; probably not needed, we can infer from initializer type
+  // TODO: modifiers, fallback value, etc.
+}
+
+function writeVariableReference({identifier}: VariableReference): string {
+  return `\${${write(identifier)}}`
+}
+
+/**
+ * The reference to a subshell evaluation
+ * @example $(ls)
+ */
+interface CallReference extends AstNode<'CallReference'> {
+  expression: CallExpression
+}
+
+function writeCallReference({expression}: CallReference): string {
+  return `\$(${write(expression)})`
+}
+
+/**
+ * @example
+ * ```shell
+ * command some-arg "another arg" "$(subcommand arg2)"
+ * ```
+ */
+interface CallExpression extends AstNode<'CallExpression'> {
+  callee: FunctionIdentifier
+  args: Array<StringLiteral | TemplateLiteral>
+}
+
+function writeCallExpression({callee, args}: CallExpression): string {
+  let output = write(callee)
+  if (args.length > 0) {
+    output += ' ' + args.map((argument) => write(argument)).join(' ')
+  }
+  return output
+}
+
+/**
+ * Variable name
+ */
+interface VariableIdentifier extends AstNode<'VariableIdentifier'> {
+  name: string
+}
+
+function writeVariableIdentifier({name}: VariableIdentifier): string {
+  return name
+}
+
+/**
+ * The reference to a function
+ */
+interface FunctionIdentifier extends AstNode<'FunctionIdentifier'> {
+  name: string
+}
+
+function writeFunctionIdentifier({name}: FunctionIdentifier): string {
+  return name
 }
 
 /**
@@ -51,6 +176,44 @@ interface AssignmentExpression extends AstNode<'AssignmentExpression'> {
   value: AssignmentValue
   operator: '=' | '+='
 }
+
+function writeAssignmentExpression({
+  identifier,
+  operator,
+  value,
+}: AssignmentExpression): string {
+  let output = `${write(identifier)}${operator}`
+  if (value) {
+    output += write(value)
+  }
+  return output
+}
+
+/**
+ * @example
+ * ```shell
+ * declare name=value
+ * ```
+ */
+interface VariableDeclaration extends AstNode<'VariableDeclaration'> {
+  identifier: VariableIdentifier
+  initializer: AssignmentValue
+  // TODO: consider valueType: 'STRING' | 'NUMBER' | 'ARRAY'; probably not needed, we can infer from initializer type
+}
+
+function writeVariableDeclaration({
+  identifier,
+  initializer,
+}: VariableDeclaration): string {
+  let output = `declare ${write(identifier)}`
+  if (initializer) {
+    output += `=${write(initializer)}`
+  }
+  return output
+}
+
+// expressions legal inside of a function body:
+type FunctionBodyExpression = VariableDeclaration | CallExpression
 
 /**
  * @example
@@ -68,91 +231,45 @@ interface FunctionDeclaration extends AstNode<'FunctionDeclaration'> {
   statements: Array<FunctionBodyExpression>
 }
 
-/**
- * @example
- * ```shell
- * command some-arg "another arg" "$(subcommand arg2)"
- * ```
- */
-interface CallExpression extends AstNode<'CallExpression'> {
-  callee: FunctionIdentifier
-  arguments: Array<StringLiteral | TemplateLiteral>
+function writeFunctionDeclaration(
+  {name, parameters, statements}: FunctionDeclaration,
+  indentation = 0,
+): string {
+  let output = `function ${write(name)} {\n`
+
+  const innerIndentation = indentation + 2
+  const spacing = ' '.repeat(innerIndentation)
+
+  output += parameters
+    .map((parameter, index) => spacing + writeParameter(parameter, index))
+    .join('\n')
+
+  output += '\n'
+
+  output += statements
+    .map((statement) => spacing + write(statement, innerIndentation))
+    .join('\n')
+
+  output += '\n}'
+
+  return output
 }
 
-/**
- * "something ${variable} $(command arg) ${variable:-default}"
- */
-interface TemplateLiteral extends AstNode<'TemplateLiteral'> {
-  expressions: Array<VariableReference | CallExpression> // TODO: add expressions like $(( 1 + 2 ))
-  quasis: Array<TemplateElement>
+// NOTE: maybe it could be using 'typescript' directly as a TS plugin?
+// then we could also add red squiggly marks for not implemented features, by node type in a given position!
+// https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin
+
+type FileExpression = FunctionBodyExpression | FunctionDeclaration
+
+interface BashFile extends AstNode<'File'> {
+  statements: Array<FileExpression>
 }
 
-/**
- * The reference to a variable
- * @example ${name}
- * @example ${1}
- */
-interface VariableReference extends AstNode<'VariableReference'> {
-  identifier: VariableIdentifier
-  // TODO: modifiers, fallback value, etc.
+function writeFile({statements}: BashFile): string {
+  return statements.map((statement) => write(statement)).join('\n')
 }
 
-/**
- * The reference to a variable
- */
-interface VariableIdentifier extends AstNode<'VariableIdentifier'> {
-  name: string
-}
-
-/**
- * The reference to a function
- */
-interface FunctionIdentifier extends AstNode<'FunctionIdentifier'> {
-  name: string
-}
-
-interface StringLiteral extends AstNode<'StringLiteral'> {
-  style: 'UNQUOTED' | 'SINGLE_QUOTED' | 'DOUBLE_QUOTED' | 'HEREDOC'
-  value: string
-}
-
-interface TemplateElement extends AstNode<'TemplateElement'> {
-  value: string
-}
-
-/**
- * @example
- * ```shell
- * ("value" "another value")
- * ```
- */
-interface ArrayLiteral extends AstNode<'ArrayLiteral'> {
-  elements: Array<StringLiteral>
-}
-
-const SH_ESCAPED_SLASH = String.fromCodePoint(92) + "'"
-
-const writeStringLiteral = ({style, value}: StringLiteral) => {
-  switch (style) {
-    // TODO: add support for all types
-    case 'SINGLE_QUOTED':
-    default:
-      return `'${value.replace(/'/g, `'${SH_ESCAPED_SLASH}'`)}'`
-  }
-}
-
-function unimplementedWriter({type}: AstNode): never {
-  throw new Error(`Writer for ${type} is not supported yet`)
-}
-
-const WRITERS = {
-  VariableDeclaration: writeVariableDeclaration,
-  StringLiteral: writeStringLiteral,
-  FunctionDeclaration: writeFunctionDeclaration,
-  CallExpression: unimplementedWriter,
-  ArrayLiteral: unimplementedWriter,
-  TemplateLiteral: unimplementedWriter,
-}
+///////////
 
 type NodeWriters = typeof WRITERS
 type NodeTypes = keyof NodeWriters
@@ -161,38 +278,40 @@ type AllNodeWriters = {
     ? (node: AstNode<K>) => string
     : NodeWriters[K]
 }
+
 type ImplementedNodeTypes = {
   [K in keyof NodeWriters]: NodeWriters[K] extends typeof unimplementedWriter
     ? never
     : K
 }[keyof NodeWriters]
 
-const write = <T extends NodeTypes, N extends Parameters<AllNodeWriters[T]>[0]>(
-  node: N,
-) => {
-  const writer = WRITERS[node.type] as (node: AstNode) => string
-  return writer(node)
+type AllAstNodes = Parameters<NodeWriters[ImplementedNodeTypes]>[0]
+
+const WRITERS = {
+  ArrayLiteral: writeArrayLiteral,
+  AssignmentExpression: writeAssignmentExpression,
+  CallExpression: writeCallExpression,
+  CallReference: writeCallReference,
+  File: writeFile,
+  FunctionDeclaration: writeFunctionDeclaration,
+  FunctionIdentifier: writeFunctionIdentifier,
+  Parameter: writeParameter,
+  StringLiteral: writeStringLiteral,
+  TemplateElement: writeTemplateElement,
+  TemplateLiteral: writeTemplateLiteral,
+  VariableDeclaration: writeVariableDeclaration,
+  VariableIdentifier: writeVariableIdentifier,
+  VariableReference: writeVariableReference,
 }
 
-function writeVariableDeclaration({
-  identifier,
-  initializer,
-}: VariableDeclaration) {
-  let output = `declare ${identifier}`
-  if (initializer) {
-    output += `=${write(initializer)}`
-  }
-  return output
+function unimplementedWriter({type}: AstNode<string>): never {
+  throw new Error(`Writer for ${type} is not supported yet`)
 }
 
-function writeFunctionDeclaration(node: FunctionDeclaration) {
-  return 'TODO'
-}
-
-// NOTE: maybe it could be using 'typescript' directly as a TS plugin?
-// then we could also add red squiggly marks for not implemented features, by node type in a given position!
-// https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin
-
-function writeFile(file: BashFile) {
-  const statements = file.statements.map((statement) => write(statement))
+export function write(node: AllAstNodes, indentation = 0) {
+  const writer = WRITERS[node.type] as (
+    node: AstNode<string>,
+    indentation?: number,
+  ) => string
+  return writer(node, indentation)
 }
