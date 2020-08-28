@@ -7,6 +7,7 @@ export interface AstNode<Type extends string> {
 export type AssignmentValue =
   | undefined
   | StringLiteral
+  | NumericLiteral
   | ArrayLiteral
   | TemplateLiteral
 
@@ -84,6 +85,14 @@ function writeStringLiteral({style, value}: StringLiteral): string {
   }
 }
 
+export interface NumericLiteral extends AstNode<'NumericLiteral'> {
+  value: string
+}
+
+function writeNumericLiteral({value}: NumericLiteral): string {
+  return value
+}
+
 /**
  * @example
  * ```shell
@@ -124,6 +133,8 @@ function writeCallReference({expression}: CallReference): string {
   return `\$(${write(expression)})`
 }
 
+export type CallExpressionArgument = StringLiteral | TemplateLiteral
+
 /**
  * @example
  * ```shell
@@ -132,7 +143,7 @@ function writeCallReference({expression}: CallReference): string {
  */
 export interface CallExpression extends AstNode<'CallExpression'> {
   callee: FunctionIdentifier
-  args: Array<StringLiteral | TemplateLiteral>
+  args: Array<CallExpressionArgument>
 }
 
 function writeCallExpression({callee, args}: CallExpression): string {
@@ -205,7 +216,11 @@ function writeVariableDeclaration({
   identifier,
   initializer,
 }: VariableDeclaration): string {
-  let output = `declare ${write(identifier)}`
+  let output = 'declare '
+  // TODO: this is for an integer, not any number; we need to reconsider how we are storing numbers
+  if (initializer?.type === 'NumericLiteral') output += '-i '
+  if (initializer?.type === 'ArrayLiteral') output += '-a '
+  output += write(identifier)
   if (initializer) {
     output += `=${write(initializer)}`
   }
@@ -304,6 +319,7 @@ const WRITERS = {
   FunctionIdentifier: writeFunctionIdentifier,
   Parameter: writeParameter,
   StringLiteral: writeStringLiteral,
+  NumericLiteral: writeNumericLiteral,
   TemplateElement: writeTemplateElement,
   TemplateLiteral: writeTemplateLiteral,
   VariableDeclaration: writeVariableDeclaration,
