@@ -255,11 +255,13 @@ function writeFunctionDeclaration(
   const innerIndentation = indentation + 2
   const spacing = ' '.repeat(innerIndentation)
 
-  output += parameters
-    .map((parameter, index) => spacing + writeParameter(parameter, index))
-    .join('\n')
+  if (parameters.length > 0) {
+    output += parameters
+      .map((parameter, index) => spacing + writeParameter(parameter, index))
+      .join('\n')
 
-  output += '\n'
+    output += '\n'
+  }
 
   output += statements
     .map((statement) => spacing + write(statement, innerIndentation))

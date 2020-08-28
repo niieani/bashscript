@@ -6,6 +6,7 @@ import {
   StringLiteral,
 } from 'typescript'
 import * as Bash from '../ast/bash-ast'
+import {FunctionBodyExpression, Parameter} from '../ast/bash-ast'
 
 type Kinds = keyof typeof ts.SyntaxKind
 
@@ -85,22 +86,17 @@ type Result = {
   errors?: readonly any[]
 }
 
-// type NodesResolver = (
-//   | ((scope: Scope) => readonly AllBashASTNodes[])
-//   | AllBashASTNodes
-//   )
-
-// type NodesResolver = (
-//   | ((scope: Scope) => readonly AllBashASTNodes[])
-//   | AllBashASTNodes
-//   )
 type ResultResolver = Result | ((scope: Scope) => Result)
 type Processed = {
   scopeInfo?: readonly IdentifierLookup[]
   result: Result | ((scope: Scope) => Result)
-  // nodes?: readonly NodesResolver[]
-  // errors?: any[]
 }
+
+// TODO: maybe Result and Processed should be unified and we just run it until result contains no more functions?
+// i.e. we can always return either {scopeInfo, result: {nodes, errors, scopeInfo}},
+// or 'result' could be a function that returns {scopeInfo, result: {nodes, errors}}
+// (or a function that returns it...)
+// this way we could build the scopeInfo gradually
 
 type MergedScopeResults = {
   scopeInfo: readonly IdentifierLookup[]
@@ -110,6 +106,7 @@ type MergedScopeResults = {
 export const translateTsAstToBashAst = (
   tsNodes: readonly ts.Node[],
   parentScope: Scope = new Scope({name: 'Root'}),
+  childScopeName: string = `${parentScope.name}.Child`,
 ): Result => {
   const {scopeInfo = [], resultResolvers = []} = tsNodes.reduce(
     (merged: MergedScopeResults, node: ts.Node): MergedScopeResults => {
@@ -123,7 +120,7 @@ export const translateTsAstToBashAst = (
   )
   // TODO: is this the place for changing the name? we need original name for future references though
   const scope = new Scope({
-    name: parentScope.name,
+    name: childScopeName,
     entries: scopeInfo.map((element) => [element.name, element]),
   })
   const results: Result[] = resultResolvers.map((result) =>
@@ -138,9 +135,11 @@ export const translateTsAstToBashAst = (
   )
 }
 
-const VISITORS: {
+type Visitors = {
   [Key in Kinds]?: (node: any, scope: Scope) => Processed
-} = {
+}
+
+const VISITORS: Visitors = {
   SourceFile: (sourceFile: ts.SourceFile) => {
     const {nodes, errors} = translateTsAstToBashAst(
       sourceFile.statements,
@@ -225,6 +224,7 @@ const VISITORS: {
     expressionStatement: ExpressionStatement,
     scope: Scope,
   ) => {
+    // return translateTsAstToBashAst([expressionStatement], scope)
     return processTsNode(expressionStatement.expression, scope)
   },
 
@@ -253,22 +253,26 @@ const VISITORS: {
     // TODO: probably should add @module to scope
     return {
       result: (scope: Scope): Result => {
-        const lookup = scope.get(callee)
-        if (!lookup) {
-          return {
-            errors: [
-              {
-                type: 'ReferenceError',
-                message: `Unable to find '${callee}' in scope.`,
-              },
-            ],
-          }
+        const lookup = scope.get(callee) ?? {
+          name: callee,
+          lookupKind: 'FUNCTION',
+          scopeName: 'Root',
         }
+        // if (!lookup) {
+        //   return {
+        //     errors: [
+        //       {
+        //         type: 'ReferenceError',
+        //         message: `Unable to find '${callee}' in scope.`,
+        //       },
+        //     ],
+        //   }
+        // }
+        const {nodes: processedArgs, errors} = translateTsAstToBashAst(
+          args,
+          scope,
+        )
         if (lookup.lookupKind === 'IMPORTED_FUNCTION') {
-          const {nodes: processedArgs, errors} = translateTsAstToBashAst(
-            args,
-            scope,
-          )
           const callExpression: Bash.CallExpression = {
             type: 'CallExpression',
             callee: {
@@ -285,6 +289,44 @@ const VISITORS: {
                 type: 'StringLiteral',
                 style: 'SINGLE_QUOTED',
                 value: lookup.name,
+              },
+              // ... now remaining other args
+              ...(processedArgs as Bash.CallExpressionArgument[]),
+            ],
+          }
+          return {
+            nodes: [callExpression],
+            errors,
+          }
+        } else if (lookup.lookupKind === 'FUNCTION') {
+          const callExpression: Bash.CallExpression = {
+            type: 'CallExpression',
+            callee: {
+              type: 'FunctionIdentifier',
+              name: lookup.name,
+            },
+            args: [
+              // ... now remaining other args
+              ...(processedArgs as Bash.CallExpressionArgument[]),
+            ],
+          }
+          return {
+            nodes: [callExpression],
+            errors,
+          }
+        } else if (lookup.lookupKind === 'VARIABLE') {
+          const callExpression: Bash.CallExpression = {
+            type: 'CallExpression',
+            callee: {
+              type: 'FunctionIdentifier',
+              name: '@callVar',
+            },
+            args: [
+              {
+                type: 'StringLiteral',
+                style: 'SINGLE_QUOTED',
+                value: lookup.name,
+                // TODO: support calling imported variables
               },
               // ... now remaining other args
               ...(processedArgs as Bash.CallExpressionArgument[]),
@@ -391,14 +433,88 @@ const VISITORS: {
     }
   },
 
-  // SyntaxList: (syntaxList: ts.SyntaxList) => {
-  //   // TODO: need to sort by: imports, functions, vars, expressions
-  //   return syntaxList
-  //     .getChildren()
-  //     .flatMap((child) => tsNodeToBashNode(child)) as Array<FileExpression>
-  // },
+  FunctionDeclaration: (
+    functionDeclaration: ts.FunctionDeclaration,
+    parentScope: Scope,
+  ): Processed => {
+    const {name, body, parameters} = functionDeclaration
+    const errors: any[] = []
+    if (!name) {
+      errors.push({
+        type: 'IncompleteSyntax',
+        message: `Missing name for: ${SyntaxKind[functionDeclaration.kind]}`,
+      })
+    }
+    if (!body) {
+      errors.push({
+        type: 'IncompleteSyntax',
+        message: `Missing body for: ${SyntaxKind[functionDeclaration.kind]}`,
+      })
+    }
+    if (!name || !body) return {result: {errors}}
+    const fnName = name.text
+    return {
+      result: (scope): Result => {
+        const bashParams = translateTsAstToBashAst(
+          parameters,
+          scope,
+          `Function:${fnName}`,
+        )
+        // TODO: make this check more robust:
+        if (scope.name.includes('Function:')) {
+          return {
+            // nodes: [
+            //   {
+            //
+            //   }
+            // ]
+            errors: [
+              {
+                type: 'UnsupportedSyntax',
+                message: `Nesting functions is not supported yet.`,
+              },
+            ],
+          }
+        }
+        const bashStatements = translateTsAstToBashAst(
+          body.statements,
+          scope,
+          `Function:${fnName}`,
+        )
+        return {
+          nodes: [
+            {
+              type: 'FunctionDeclaration',
+              name: {
+                type: 'FunctionIdentifier',
+                name: fnName,
+              },
+              parameters: (bashParams.nodes ?? []) as Bash.Parameter[],
+              // TODO: need to handle
+              statements: (bashStatements.nodes ??
+                []) as Bash.FunctionBodyExpression[],
+            },
+          ],
+          errors: [
+            ...(bashParams.errors ?? []),
+            ...(bashStatements.errors ?? []),
+          ],
+        }
+      },
+      scopeInfo: [
+        {
+          scopeName: parentScope.name,
+          name: name.text,
+          lookupKind: 'FUNCTION',
+        },
+      ],
+    }
+  },
 
-  // EndOfFileToken: () => [],
+  // Parameter: (parameter: ts.ParameterDeclaration) => {
+  //   // TODO
+  //   return {result: {}}
+  // },
 }
 
 function unimplementedVisitor(node: ts.Node): Processed {
@@ -418,9 +534,13 @@ function unimplementedVisitor(node: ts.Node): Processed {
 }
 // .filter(([key, value]) => !Number.isNaN(Number(key)))
 
-export function processTsNode(node: ts.Node, scope: Scope): Processed {
+export function processTsNode(
+  node: ts.Node,
+  scope: Scope,
+  visitorOverrides: Visitors = {},
+): Processed {
   const syntaxKind = SyntaxKind[node.kind]
-  const visitor = VISITORS[syntaxKind]
+  const visitor = visitorOverrides[syntaxKind] ?? VISITORS[syntaxKind]
   if (!visitor) {
     return unimplementedVisitor(node)
   }
