@@ -24,5 +24,12 @@ function nestedFunctions() {
   return nestedOne
 }
 
+const arrowFn = () => {
+  echo('hmm')
+  return () => {
+    echo('lool')
+  }
+}
+
 const theNestedOne = nestedFunctions()
 theNestedOne(123)

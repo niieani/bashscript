@@ -226,3 +226,49 @@ declare _result1="$(__callProperty arr map __lamda_arr_map_anon_1)"
 declare result="$(__callProperty _result1 map __lamda_arr_map_anon_2)"
 unset _result1
 ```
+
+
+### Objects and other literals
+
+#### input
+
+```typescript
+const obj = {
+  a: {
+    aa: 123,
+  },
+  b: 'hello',
+}
+
+echo(obj.a.aa)
+```
+
+#### output
+
+```shell script
+declare obj_a_aa=123
+declare -A obj_a=([aa:ref]="obj_a_aa")
+declare -A obj=([a:ref]="obj_a" [b]="hello" [__type]=object [__dummy]=) # thanks to dummy entries we can rely on count to check if this is an array
+
+@objectProperty() {
+  local objName="$1"
+  local property="$2"
+  shift; shift;
+  local refName="${objName}['${property}:ref']"
+  echo "${refName}"
+  local ref="${!refName}"
+  echo "${ref}"
+  if [[ -z "${ref}" ]]
+  then
+    refName="${objName}['${property}']"
+    echo "${!refName}"
+    return
+  fi
+  if [ "$#" -eq 0 ]; then
+    echo "Error: Property missing"
+  fi
+  @objectProperty "${ref}" "$@"
+}
+
+@objectProperty obj a aa
+```

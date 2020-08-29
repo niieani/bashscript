@@ -8,9 +8,7 @@ import {
 import * as Bash from '../ast/bash-ast'
 import {
   AllBashASTNodes,
-  FunctionBodyExpression,
   getChildrenRecursively,
-  Parameter,
   makeCallExpression,
   makeBashSafeFunctionName,
   makeBashSafeVariableName,
@@ -85,6 +83,12 @@ export class Scope {
 
   get fullName(): string {
     return this.path.join('.')
+  }
+
+  anonymousId = 0
+
+  getNextAnonymousId() {
+    return `anonymous.${++this.anonymousId}`
   }
 
   constructor({
@@ -405,7 +409,7 @@ const VISITORS: Visitors = {
         const lookup = scope.get(callee) ?? {
           name: callee,
           lookupKind: 'FUNCTION',
-          scopeName: 'Root',
+          scopeName: 'Global',
         }
         // if (!lookup) {
         //   return {
@@ -435,12 +439,10 @@ const VISITORS: Visitors = {
             args: [
               {
                 type: 'StringLiteral',
-                style: 'SINGLE_QUOTED',
                 value: lookup.importedFrom,
               },
               {
                 type: 'StringLiteral',
-                style: 'SINGLE_QUOTED',
                 value: lookup.name,
               },
               // ... now remaining other args
@@ -477,7 +479,6 @@ const VISITORS: Visitors = {
             args: [
               {
                 type: 'StringLiteral',
-                style: 'SINGLE_QUOTED',
                 value: lookup.name,
                 // TODO: support calling imported variables
               },
@@ -501,7 +502,7 @@ const VISITORS: Visitors = {
         nodes: [
           {
             type: 'StringLiteral',
-            style: 'SINGLE_QUOTED',
+
             value: literal.text,
           },
         ],
@@ -543,6 +544,15 @@ const VISITORS: Visitors = {
     visitorOverrides,
   ) => {
     const {name: nameIdentifier, initializer} = declaration
+
+    if (initializer && SyntaxKind[initializer.kind] === 'ArrowFunction') {
+      return VISITORS.FunctionDeclaration!(
+        {...initializer, name: nameIdentifier},
+        parentScope,
+        visitorOverrides,
+      )
+    }
+
     const {
       nodes: initializerNodes = [],
       errors: initializerErrors = [],
@@ -610,6 +620,18 @@ const VISITORS: Visitors = {
     }
   },
 
+  ArrowFunction: (
+    arrowFn: ts.ArrowFunction,
+    scope: Scope,
+    visitorOverrides,
+  ) => {
+    return VISITORS.FunctionDeclaration!(
+      {...arrowFn, name: {text: scope.getNextAnonymousId()}},
+      scope,
+      visitorOverrides,
+    )
+  },
+
   FunctionDeclaration: (
     functionDeclaration: ts.FunctionDeclaration,
     parentScope: Scope,
@@ -644,12 +666,6 @@ const VISITORS: Visitors = {
           tsNodes: body.statements,
           scope: fnScope,
           visitorOverrides,
-          // visitorOverrides: {
-          //   ...visitorOverrides,
-          //   FunctionDeclaration: (innerDeclaration: ts.FunctionDeclaration, _parentScope, overrides) => {
-          //     const {result, scopeInfo} = VISITORS.FunctionDeclaration!(innerDeclaration, _parentScope, overrides)
-          //   },
-          // }
         })
 
         const uniqByName = uniqBy<{name: string}, string>(({name}) => name)
@@ -742,12 +758,10 @@ const VISITORS: Visitors = {
                     elements: [
                       {
                         type: 'StringLiteral',
-                        style: 'SINGLE_QUOTED',
                         value: 'function',
                       },
                       {
                         type: 'StringLiteral',
-                        style: 'SINGLE_QUOTED',
                         value: subFnActualBashName,
                       },
                       ...referencedScopedIdentifiers.map((identifier) => ({
@@ -762,12 +776,10 @@ const VISITORS: Visitors = {
                           args: [
                             {
                               type: 'StringLiteral',
-                              style: 'SINGLE_QUOTED',
                               value: '-p',
                             },
                             {
                               type: 'StringLiteral',
-                              style: 'SINGLE_QUOTED',
                               value: identifier.name,
                             },
                           ],
@@ -834,13 +846,19 @@ const VISITORS: Visitors = {
         }
         return {
           nodes: [
-            {
-              type:
-                lookup.lookupKind === 'VARIABLE'
-                  ? 'VariableIdentifier'
-                  : 'FunctionIdentifier',
-              name: lookup.bashName,
-            },
+            lookup.lookupKind === 'VARIABLE'
+              ? {
+                  type: 'VariableReference',
+                  quoted: true,
+                  identifier: {
+                    type: 'VariableIdentifier',
+                    name: lookup.bashName,
+                  },
+                }
+              : {
+                  type: 'FunctionIdentifier',
+                  name: lookup.bashName,
+                },
           ],
         }
       },

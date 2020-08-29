@@ -73,18 +73,30 @@ function writeTemplateElement({value}: TemplateElement): string {
 }
 
 export interface StringLiteral extends AstNode<'StringLiteral'> {
-  style: 'UNQUOTED' | 'SINGLE_QUOTED' | 'DOUBLE_QUOTED' | 'HEREDOC'
+  style?: 'UNQUOTED' | 'SINGLE_QUOTED' | 'DOUBLE_QUOTED' | 'HEREDOC'
   value: string
 }
 
 const SH_ESCAPED_SLASH = String.fromCodePoint(92) + "'"
 
-function writeStringLiteral({style, value}: StringLiteral): string {
+function writeStringLiteral({style, value, type}: StringLiteral): string {
   switch (style) {
     // TODO: add support for all types
     case 'SINGLE_QUOTED':
-    default:
       return `'${value.replace(/'/g, `'${SH_ESCAPED_SLASH}'`)}'`
+    case 'UNQUOTED':
+      return value.replace(/[^a-zA-Z0-9-_./]/g, (value) => `\\${value}`)
+    default: {
+      if (value.includes('\n'))
+        return writeStringLiteral({type, value, style: 'HEREDOC'})
+      if (value.match(/[^a-zA-Z0-9-_./]/)) {
+        if (value.includes("'"))
+          return writeStringLiteral({type, value, style: 'DOUBLE_QUOTED'})
+        else return writeStringLiteral({type, value, style: 'SINGLE_QUOTED'})
+      } else {
+        return writeStringLiteral({type, value, style: 'UNQUOTED'})
+      }
+    }
   }
 }
 
