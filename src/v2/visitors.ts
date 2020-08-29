@@ -605,7 +605,10 @@ const VISITORS: Visitors = {
 
         const uniqByName = uniqBy<{name: string}, string>(({name}) => name)
 
-        const {nodes, statements} = (bashStatements.nodes ?? []).reduce<{
+        const {
+          nodes: nestedFunctionDeclarations,
+          statements: bashStatementNodes,
+        } = (bashStatements.nodes ?? []).reduce<{
           statements: AllBashASTNodes[]
           nodes: AllBashASTNodes[]
         }>(
@@ -633,7 +636,40 @@ const VISITORS: Visitors = {
               ),
             )
             return {
-              nodes: [...nodes, statement],
+              nodes: [
+                ...nodes,
+                {
+                  ...statement,
+                  statements: [
+                    ...referencedScopedIdentifiers.map((identifier, index) => ({
+                      type: 'CallExpression',
+                      callee: {
+                        type: 'FunctionIdentifier',
+                        name: 'eval',
+                      },
+                      args: [
+                        {
+                          type: 'VariableReference',
+                          quoted: true,
+                          identifier: {
+                            type: 'VariableIdentifier',
+                            name: String(index + 1),
+                          },
+                        },
+                      ],
+                    })),
+                    ...referencedScopedIdentifiers.map(() => ({
+                      type: 'CallExpression',
+                      callee: {
+                        type: 'FunctionIdentifier',
+                        name: 'shift',
+                      },
+                      args: [],
+                    })),
+                    ...statement.statements,
+                  ],
+                } as Bash.FunctionDeclaration,
+              ],
               statements: [
                 ...statements,
                 {
@@ -704,19 +740,6 @@ const VISITORS: Visitors = {
           },
         )
 
-        const nestedFunctionDeclarations = (bashStatements.nodes ?? []).filter(
-          (statement) => statement.type === 'FunctionDeclaration',
-        )
-
-        // translate the nested function definitions:
-        const bashStatementNodes = (bashStatements.nodes ?? []).map(
-          (statement) => {
-            if (statement.type !== 'FunctionDeclaration') {
-              return statement
-            }
-          },
-        )
-
         return {
           nodes: [
             {
@@ -726,7 +749,6 @@ const VISITORS: Visitors = {
                 name: fnName,
               },
               parameters: (bashParams.nodes ?? []) as Bash.Parameter[],
-              // TODO: need to handle
               statements: bashStatementNodes as Bash.FunctionBodyExpression[],
             },
             ...nestedFunctionDeclarations,

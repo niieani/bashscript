@@ -51,12 +51,14 @@ function writeParameter(
  * ```
  */
 export interface TemplateLiteral extends AstNode<'TemplateLiteral'> {
-  expressions: Array<VariableReference | CallReference> // TODO: add expressions like $(( 1 + 2 ))
+  expressions: Array<VariableReference | CallReference> // TODO: add ExpressionLiteral like $(( 1 + 2 ))
   quasis: Array<TemplateElement>
 }
 
 function writeTemplateLiteral({expressions, quasis}: TemplateLiteral): string {
-  const expressionOutput = expressions.map((expression) => write(expression))
+  const expressionOutput = expressions.map((expression) =>
+    write({...expression, quoted: false}),
+  )
   const quasisOutput = quasis.map((quasis) => write(quasis))
   return `"${combineAlternate(quasisOutput, expressionOutput).join('')}"`
 }
@@ -114,11 +116,20 @@ function writeArrayLiteral({elements}: ArrayLiteral): string {
  */
 export interface VariableReference extends AstNode<'VariableReference'> {
   identifier: VariableIdentifier
+  // evaluates the variable named like the variable contents: ${!variable} === ${other}, where variable='other'
+  bang?: boolean
+  // ensures the variable must be quoted and will not expand, i.e. "${name}"
+  quoted?: boolean
   // TODO: modifiers, fallback value, etc.
 }
 
-function writeVariableReference({identifier}: VariableReference): string {
-  return `\${${write(identifier)}}`
+function writeVariableReference({
+  identifier,
+  bang,
+  quoted,
+}: VariableReference): string {
+  const value = `\${${bang ? '!' : ''}${write(identifier)}}`
+  return quoted ? `"${value}"` : value
 }
 
 /**
@@ -127,13 +138,19 @@ function writeVariableReference({identifier}: VariableReference): string {
  */
 export interface CallReference extends AstNode<'CallReference'> {
   expression: CallExpression
+  quoted?: boolean
 }
 
-function writeCallReference({expression}: CallReference): string {
-  return `\$(${write(expression)})`
+function writeCallReference({expression, quoted}: CallReference): string {
+  const value = `\$(${write(expression)})`
+  return quoted ? `"${value}"` : value
 }
 
-export type CallExpressionArgument = StringLiteral | TemplateLiteral
+export type CallExpressionArgument =
+  | StringLiteral
+  | TemplateLiteral
+  | VariableReference
+  | CallReference
 
 /**
  * @example
@@ -365,3 +382,15 @@ export function getChildrenRecursively(
 // NOTE: maybe it could be using 'typescript' directly as a TS plugin?
 // then we could also add red squiggly marks for not implemented features, by node type in a given position!
 // https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin
+
+export const makeCallExpression = (
+  callee: string,
+  args: CallExpressionArgument[] = [],
+): CallExpression => ({
+  type: 'CallExpression',
+  callee: {
+    type: 'FunctionIdentifier',
+    name: callee,
+  },
+  args,
+})
