@@ -18,7 +18,11 @@ function lol(one: string, two: number) {
 function nestedFunctions() {
   echo('hi')
   let x = 1
-  function nestedOne() {
+  function nestedOne(a: number) {
     echo('hello', x)
   }
+  return nestedOne
 }
+
+const theNestedOne = nestedFunctions()
+theNestedOne(123)

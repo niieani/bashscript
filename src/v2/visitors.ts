@@ -11,13 +11,16 @@ import {
   FunctionBodyExpression,
   getChildrenRecursively,
   Parameter,
+  makeCallExpression,
+  makeBashSafeFunctionName,
+  makeBashSafeVariableName,
 } from '../ast/bash-ast'
 import {uniqBy} from 'ramda'
 
 type Kinds = keyof typeof ts.SyntaxKind
 
 // https://github.com/microsoft/TypeScript/issues/37574:
-const SyntaxKind = Object.fromEntries(
+export const SyntaxKind = Object.fromEntries(
   Object.entries(ts.SyntaxKind).reduce<[number, Kinds][]>(
     (result, [key, value]) =>
       // only sequential
@@ -48,25 +51,32 @@ type IdentifierLookup =
   | VariableIdentifierLookup
 type ImportedFunctionIdentifierLookup = {
   name: string
+  bashName: string
   lookupKind: 'IMPORTED_FUNCTION'
   importedFrom: string
   scopeName: string
 }
 type FunctionIdentifierLookup = {
   name: string
+  bashName: string
   lookupKind: 'FUNCTION'
   scopeName: string
 }
 type VariableIdentifierLookup = {
   name: string
+  bashName: string
   lookupKind: 'VARIABLE'
   scopeName: string
 }
 
 export class Scope {
   parentScope: Scope
+  /**
+   * a bash-sanitized name for the scope
+   */
   name: string
-  map = new Map<string, IdentifierLookup>()
+  byTSName = new Map<string, IdentifierLookup>()
+  byBashName = new Map<string, IdentifierLookup>()
   type: 'FUNCTION' | 'FILE'
 
   get path(): string[] {
@@ -95,18 +105,34 @@ export class Scope {
     return this.parentScope === this
   }
 
-  get(key: string, skipRoot = false): IdentifierLookup | undefined {
+  get(
+    key: string,
+    {
+      skipRoot = false,
+      keyType = 'byTSName',
+    }: {skipRoot?: boolean; keyType?: 'byBashName' | 'byTSName'} = {},
+  ): IdentifierLookup | undefined {
     return skipRoot && this.isRoot
       ? undefined
-      : this.map.get(key) ??
-          (this.isRoot ? undefined : this.parentScope.get(key))
+      : this[keyType].get(key) ??
+          (this.isRoot
+            ? undefined
+            : this.parentScope.get(key, {skipRoot, keyType}))
   }
 
-  has(key: string, skipRoot = false): boolean {
+  has(
+    key: string,
+    {
+      skipRoot = false,
+      keyType = 'byTSName',
+    }: {skipRoot?: boolean; keyType?: 'byBashName' | 'byTSName'} = {},
+  ): boolean {
     return skipRoot && this.isRoot
       ? false
-      : this.map.has(key) ??
-          (this.isRoot ? undefined : this.parentScope.has(key))
+      : this[keyType].has(key) ??
+          (this.isRoot
+            ? undefined
+            : this.parentScope.has(key, {skipRoot, keyType}))
   }
 
   populate(list: readonly IdentifierLookup[]) {
@@ -119,7 +145,18 @@ export class Scope {
           message: `The identifier ${item.name} (${item.lookupKind}) is shadowing another element (${previousItem.lookupKind})`,
         })
       }
-      this.map.set(item.name, item)
+
+      const value =
+        this.type === 'FUNCTION' && item.lookupKind === 'FUNCTION'
+          ? {
+              ...item,
+              bashName: `${this.name}.${item.bashName}`,
+            }
+          : item
+
+      this.byTSName.set(value.name, value)
+
+      this.byBashName.set(value.bashName, value)
     })
     return {warnings}
   }
@@ -198,7 +235,6 @@ export const translateTsAstToBashAst = ({
     {} as MergedScopeResults,
   )
 
-  // TODO: is this the place for changing the name? we need original name for future references though
   const {warnings} = scope.populate(scopeInfo)
 
   const results: Result[] = resultResolvers.map((result) =>
@@ -290,6 +326,9 @@ const VISITORS: Visitors = {
               // TODO: need to use TS type information to infer if imported type was a const or a function
               // for now we can assume CAPITALIZED imports are variables
               lookupKind: 'IMPORTED_FUNCTION',
+              // for now we don't need to makeBashSafeFunctionName(elementBeingImported) because
+              // we don't support renaming yet!
+              bashName: elementBeingImported,
               scopeName: scope.name,
             })
           })
@@ -310,16 +349,32 @@ const VISITORS: Visitors = {
     scope: Scope,
     visitorOverrides,
   ) => {
-    // return translateTsAstToBashAst([expressionStatement], scope)
     return processTsNode({
       node: expressionStatement.expression,
-      scope: scope,
+      scope,
+      visitorOverrides,
+    })
+  },
+
+  ReturnStatement: (statement: ts.ReturnStatement, scope, visitorOverrides) => {
+    const {expression} = statement
+    if (!expression) {
+      return {
+        result: {
+          nodes: [makeCallExpression('return')],
+        },
+      }
+    }
+    // currently, just execute the return expression
+    return processTsNode({
+      node: expression,
+      scope,
       visitorOverrides,
     })
   },
 
   CallExpression: (
-    callExpression: CallExpression,
+    callExpression: ts.CallExpression,
     parentScope: Scope,
     visitorOverrides,
   ): Processed => {
@@ -344,7 +399,7 @@ const VISITORS: Visitors = {
     }
     const id = expression as Identifier
     const callee = id.text
-    // TODO: probably should add @module to scope
+    // TODO: probably should add @fromModule to scope
     return {
       result: (scope: Scope): Result => {
         const lookup = scope.get(callee) ?? {
@@ -362,9 +417,12 @@ const VISITORS: Visitors = {
         //     ],
         //   }
         // }
-        const {nodes: processedArgs, errors} = translateTsAstToBashAst({
+        const {
+          nodes: processedArgs = [],
+          errors = [],
+        } = translateTsAstToBashAst({
           tsNodes: args,
-          scope: scope,
+          scope,
           visitorOverrides,
         })
         if (lookup.lookupKind === 'IMPORTED_FUNCTION') {
@@ -372,7 +430,7 @@ const VISITORS: Visitors = {
             type: 'CallExpression',
             callee: {
               type: 'FunctionIdentifier',
-              name: '@module',
+              name: '@fromModule',
             },
             args: [
               {
@@ -491,19 +549,12 @@ const VISITORS: Visitors = {
     } = initializer
       ? translateTsAstToBashAst({
           tsNodes: [initializer],
+          // TODO: likely a new scope that doesn't infect this one
           scope: parentScope,
           visitorOverrides,
         })
       : {}
     const errors = [...initializerErrors]
-    const bashInitializer =
-      initializerNodes.length === 0
-        ? undefined
-        : initializerNodes.length === 1 &&
-          initializerNodes[0].type.endsWith('Literal')
-        ? (initializerNodes[0] as Bash.AssignmentValue)
-        : // TODO: we want special handling for this case
-          undefined
     if (initializerNodes.length > 1) {
       errors.push({
         type: 'UnsupportedSyntax',
@@ -512,6 +563,18 @@ const VISITORS: Visitors = {
           .join(', ')}`,
       })
     }
+
+    let [bashInitializer] = initializerNodes
+
+    if (bashInitializer?.type === 'CallExpression') {
+      // wrap a CallExpression in a CallReference when in initializer position
+      bashInitializer = {
+        type: 'CallReference',
+        quoted: true,
+        expression: bashInitializer,
+      } as Bash.CallReference
+    }
+
     if (nameIdentifier.kind !== ts.SyntaxKind.Identifier) {
       errors.push({
         type: 'UnsupportedSyntax',
@@ -531,7 +594,7 @@ const VISITORS: Visitors = {
               type: 'VariableIdentifier',
               name,
             },
-            initializer: bashInitializer,
+            initializer: bashInitializer as Bash.AssignmentValue,
           },
         ],
         errors,
@@ -541,6 +604,7 @@ const VISITORS: Visitors = {
           name,
           lookupKind: 'VARIABLE',
           scopeName: parentScope.name,
+          bashName: makeBashSafeVariableName(name),
         },
       ],
     }
@@ -566,39 +630,24 @@ const VISITORS: Visitors = {
       })
     }
     if (!name || !body) return {result: {errors}}
-    const fnName = name.text
-    const fnScope = new Scope({parentScope, name: fnName, type: 'FUNCTION'})
+    const originalFnName = name.text
+    const bashFnName = makeBashSafeFunctionName(originalFnName)
+    const fnScope = new Scope({parentScope, name: bashFnName, type: 'FUNCTION'})
     return {
-      result: (scope): Result => {
+      result: (): Result => {
         const bashParams = translateTsAstToBashAst({
           tsNodes: parameters,
           scope: fnScope,
           visitorOverrides,
         })
-        // TODO: make this check more robust:
-        // if (scope.name.includes('Function:')) {
-        //   return {
-        //     // nodes: [
-        //     //   {
-        //     //
-        //     //   }
-        //     // ]
-        //     errors: [
-        //       {
-        //         type: 'UnsupportedSyntax',
-        //         message: `Nesting functions is not supported yet.`,
-        //       },
-        //     ],
-        //   }
-        // }
         const bashStatements = translateTsAstToBashAst({
           tsNodes: body.statements,
           scope: fnScope,
           visitorOverrides,
           // visitorOverrides: {
           //   ...visitorOverrides,
-          //   FunctionDeclaration: (innerDeclaration: ts.FunctionDeclaration, _parentScope, _this) => {
-          //
+          //   FunctionDeclaration: (innerDeclaration: ts.FunctionDeclaration, _parentScope, overrides) => {
+          //     const {result, scopeInfo} = VISITORS.FunctionDeclaration!(innerDeclaration, _parentScope, overrides)
           //   },
           // }
         })
@@ -613,13 +662,17 @@ const VISITORS: Visitors = {
           nodes: AllBashASTNodes[]
         }>(
           ({statements, nodes}, statement) => {
-            if (statement.type !== 'FunctionDeclaration')
+            if (statement.type !== 'FunctionDeclaration') {
               return {
                 statements: [...statements, statement],
                 nodes,
               }
-
-            const subFnName = statement.name.name
+            }
+            const subFnBashName = statement.name.name
+            const subFnLookup = fnScope.get(subFnBashName, {
+              keyType: 'byBashName',
+            })!
+            const subFnActualBashName = subFnLookup.bashName
             // traverse all children (deep) to find all VariableIdentifiers except those inside other Functions
             const children = getChildrenRecursively(statement)
             const referencedScopedIdentifiers = uniqByName(
@@ -629,10 +682,12 @@ const VISITORS: Visitors = {
                 ): child is Bash.VariableIdentifier | Bash.FunctionIdentifier =>
                   (child.type === 'VariableIdentifier' ||
                     child.type === 'FunctionIdentifier') &&
-                  // TODO: refactor scopeName to real scope with a 'scopeType' or keep depth or something
-                  fnScope.has(child.name, true) &&
+                  fnScope.has(child.name, {
+                    skipRoot: true,
+                    keyType: 'byBashName',
+                  }) &&
                   // skip references to self
-                  child.name !== subFnName,
+                  child.name !== subFnActualBashName,
               ),
             )
             return {
@@ -640,6 +695,10 @@ const VISITORS: Visitors = {
                 ...nodes,
                 {
                   ...statement,
+                  name: {
+                    ...statement.name,
+                    name: subFnActualBashName,
+                  },
                   statements: [
                     ...referencedScopedIdentifiers.map((identifier, index) => ({
                       type: 'CallExpression',
@@ -689,44 +748,30 @@ const VISITORS: Visitors = {
                       {
                         type: 'StringLiteral',
                         style: 'SINGLE_QUOTED',
-                        value: `${fnName}.${subFnName}`,
+                        value: subFnActualBashName,
                       },
                       ...referencedScopedIdentifiers.map((identifier) => ({
-                        type: 'TemplateLiteral',
-                        expressions: [
-                          {
-                            type: 'CallReference',
-                            expression: {
-                              type: 'CallExpression',
-                              callee: {
-                                type: 'FunctionIdentifier',
-                                name: 'declare',
-                              },
-                              args: [
-                                {
-                                  type: 'StringLiteral',
-                                  style: 'SINGLE_QUOTED',
-                                  value: '-p',
-                                },
-                                {
-                                  type: 'StringLiteral',
-                                  style: 'SINGLE_QUOTED',
-                                  value: identifier.name,
-                                },
-                              ],
+                        type: 'CallReference',
+                        quoted: true,
+                        expression: {
+                          type: 'CallExpression',
+                          callee: {
+                            type: 'FunctionIdentifier',
+                            name: 'declare',
+                          },
+                          args: [
+                            {
+                              type: 'StringLiteral',
+                              style: 'SINGLE_QUOTED',
+                              value: '-p',
                             },
-                          },
-                        ],
-                        quasis: [
-                          {
-                            type: 'TemplateElement',
-                            value: '',
-                          },
-                          {
-                            type: 'TemplateElement',
-                            value: '',
-                          },
-                        ],
+                            {
+                              type: 'StringLiteral',
+                              style: 'SINGLE_QUOTED',
+                              value: identifier.name,
+                            },
+                          ],
+                        },
                       })),
                     ],
                   },
@@ -740,13 +785,16 @@ const VISITORS: Visitors = {
           },
         )
 
+        // the function might have been renamed, so we use the name from scope
+        const fnLookup = fnScope.get(originalFnName)!
+
         return {
           nodes: [
             {
               type: 'FunctionDeclaration',
               name: {
                 type: 'FunctionIdentifier',
-                name: fnName,
+                name: fnLookup.bashName,
               },
               parameters: (bashParams.nodes ?? []) as Bash.Parameter[],
               statements: bashStatementNodes as Bash.FunctionBodyExpression[],
@@ -762,8 +810,9 @@ const VISITORS: Visitors = {
       scopeInfo: [
         {
           scopeName: parentScope.name,
-          name: name.text,
+          name: originalFnName,
           lookupKind: 'FUNCTION',
+          bashName: bashFnName,
         },
       ],
     }
@@ -790,7 +839,7 @@ const VISITORS: Visitors = {
                 lookup.lookupKind === 'VARIABLE'
                   ? 'VariableIdentifier'
                   : 'FunctionIdentifier',
-              name: lookup.name,
+              name: lookup.bashName,
             },
           ],
         }

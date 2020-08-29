@@ -10,6 +10,7 @@ export type AssignmentValue =
   | NumericLiteral
   | ArrayLiteral
   | TemplateLiteral
+  | CallReference
 
 /**
  * @example
@@ -394,3 +395,9 @@ export const makeCallExpression = (
   },
   args,
 })
+
+export const makeBashSafeVariableName = (name: string) =>
+  name.replace(/[^a-zA-Z_][^a-zA-Z_0-9]*/g, '_')
+
+export const makeBashSafeFunctionName = (name: string) =>
+  name.replace(/^[^a-zA-Z_]/g, '_')

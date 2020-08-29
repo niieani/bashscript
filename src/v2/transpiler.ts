@@ -1,8 +1,7 @@
 import * as ts from 'typescript'
-import {SyntaxKind} from 'typescript'
 import {readFileSync} from 'fs'
 import path from 'path'
-import {Scope, translateTsAstToBashAst} from './visitors'
+import {Scope, translateTsAstToBashAst, SyntaxKind} from './visitors'
 import {write} from '../ast/bash-ast'
 
 export function printAstTree(sourceFile: ts.SourceFile) {
