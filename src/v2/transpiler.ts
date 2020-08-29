@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {SyntaxKind} from 'typescript'
 import {readFileSync} from 'fs'
 import path from 'path'
-import {translateTsAstToBashAst} from './visitors'
+import {Scope, translateTsAstToBashAst} from './visitors'
 import {write} from '../ast/bash-ast'
 
 export function printAstTree(sourceFile: ts.SourceFile) {
@@ -22,10 +22,14 @@ export function printAstTree(sourceFile: ts.SourceFile) {
 
 export function transpile(sourceFile: ts.SourceFile) {
   // const symbols = new Set()
-  const {nodes: [bashAst] = [], errors} = translateTsAstToBashAst([sourceFile])
+  const {nodes: [bashAst] = [], errors, warnings} = translateTsAstToBashAst({
+    tsNodes: [sourceFile],
+    scope: new Scope({type: 'FILE', name: sourceFile.fileName}),
+  })
   const output = write(bashAst)
   console.log(output)
   console.log(errors)
+  console.log(warnings)
 }
 
 function transpileFile(

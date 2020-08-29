@@ -6,7 +6,13 @@ import {
   StringLiteral,
 } from 'typescript'
 import * as Bash from '../ast/bash-ast'
-import {FunctionBodyExpression, Parameter} from '../ast/bash-ast'
+import {
+  AllBashASTNodes,
+  FunctionBodyExpression,
+  getChildrenRecursively,
+  Parameter,
+} from '../ast/bash-ast'
+import {uniqBy} from 'ramda'
 
 type Kinds = keyof typeof ts.SyntaxKind
 
@@ -57,25 +63,87 @@ type VariableIdentifierLookup = {
   scopeName: string
 }
 
-class Scope extends Map<string, IdentifierLookup> {
+export class Scope {
+  parentScope: Scope
   name: string
+  map = new Map<string, IdentifierLookup>()
+  type: 'FUNCTION' | 'FILE'
+
+  get path(): string[] {
+    return this.isRoot ? [this.name] : [...this.parentScope.path, this.name]
+  }
+
+  get fullName(): string {
+    return this.path.join('.')
+  }
+
   constructor({
-    entries,
-    name,
     parentScope,
+    name,
+    type,
   }: {
-    name: string
-    entries?: readonly (readonly [string, IdentifierLookup])[] | null
     parentScope?: Scope
+    name: string
+    type: 'FUNCTION' | 'FILE'
   }) {
-    const mergedEntries = [
-      ...(entries ?? []),
-      ...(parentScope ? Array.from(parentScope.entries()) : []),
-    ]
-    super(mergedEntries)
+    this.parentScope = parentScope ?? this
     this.name = name
+    this.type = type
+  }
+
+  get isRoot() {
+    return this.parentScope === this
+  }
+
+  get(key: string, skipRoot = false): IdentifierLookup | undefined {
+    return skipRoot && this.isRoot
+      ? undefined
+      : this.map.get(key) ??
+          (this.isRoot ? undefined : this.parentScope.get(key))
+  }
+
+  has(key: string, skipRoot = false): boolean {
+    return skipRoot && this.isRoot
+      ? false
+      : this.map.has(key) ??
+          (this.isRoot ? undefined : this.parentScope.has(key))
+  }
+
+  populate(list: readonly IdentifierLookup[]) {
+    const warnings: any[] = []
+    list.forEach((item) => {
+      const previousItem = this.get(item.name)
+      if (previousItem) {
+        warnings.push({
+          type: 'IdentifierShadowing',
+          message: `The identifier ${item.name} (${item.lookupKind}) is shadowing another element (${previousItem.lookupKind})`,
+        })
+      }
+      this.map.set(item.name, item)
+    })
+    return {warnings}
   }
 }
+
+// class Scope extends Map<string, IdentifierLookup> {
+//   name: string
+//   constructor({
+//     entries,
+//     name,
+//     parentScope,
+//   }: {
+//     name: string
+//     entries?: readonly (readonly [string, IdentifierLookup])[] | null
+//     parentScope?: Scope
+//   }) {
+//     const mergedEntries = [
+//       ...(entries ?? []),
+//       ...(parentScope ? Array.from(parentScope.entries()) : []),
+//     ]
+//     super(mergedEntries)
+//     this.name = name
+//   }
+// }
 
 // const makeScope = (parentScope?: Scope) => {
 //   return parentScope ? new Map(parentScope.entries()) : new Map()
@@ -84,6 +152,7 @@ class Scope extends Map<string, IdentifierLookup> {
 type Result = {
   nodes?: readonly Bash.AllBashASTNodes[]
   errors?: readonly any[]
+  warnings?: readonly any[]
 }
 
 type ResultResolver = Result | ((scope: Scope) => Result)
@@ -103,14 +172,24 @@ type MergedScopeResults = {
   resultResolvers: readonly ResultResolver[]
 }
 
-export const translateTsAstToBashAst = (
-  tsNodes: readonly ts.Node[],
-  parentScope: Scope = new Scope({name: 'Root'}),
-  childScopeName: string = `${parentScope.name}.Child`,
-): Result => {
+interface TranslateTsAstToBashAstParams {
+  tsNodes: readonly ts.Node[]
+  scope: Scope
+  visitorOverrides?: Visitors
+}
+
+export const translateTsAstToBashAst = ({
+  tsNodes,
+  scope,
+  visitorOverrides = {},
+}: TranslateTsAstToBashAstParams): Result => {
   const {scopeInfo = [], resultResolvers = []} = tsNodes.reduce(
     (merged: MergedScopeResults, node: ts.Node): MergedScopeResults => {
-      const {scopeInfo = [], result} = processTsNode(node, parentScope)
+      const {scopeInfo = [], result} = processTsNode({
+        node: node,
+        scope,
+        visitorOverrides,
+      })
       return {
         scopeInfo: [...(merged.scopeInfo ?? []), ...scopeInfo],
         resultResolvers: [...(merged.resultResolvers ?? []), result],
@@ -118,33 +197,39 @@ export const translateTsAstToBashAst = (
     },
     {} as MergedScopeResults,
   )
+
   // TODO: is this the place for changing the name? we need original name for future references though
-  const scope = new Scope({
-    name: childScopeName,
-    entries: scopeInfo.map((element) => [element.name, element]),
-  })
+  const {warnings} = scope.populate(scopeInfo)
+
   const results: Result[] = resultResolvers.map((result) =>
     typeof result === 'function' ? result(scope) : result,
   )
+
   return results.reduce(
-    (result: Result, {errors = [], nodes = []}) => ({
+    (result: Result, {errors = [], nodes = [], warnings = []}) => ({
       errors: [...(result.errors ?? []), ...errors],
+      warnings: [...(result.warnings ?? []), ...warnings],
       nodes: [...(result.nodes ?? []), ...nodes],
     }),
-    {} as Result,
+    {warnings} as Result,
   )
 }
 
 type Visitors = {
-  [Key in Kinds]?: (node: any, scope: Scope) => Processed
+  [Key in Kinds]?: (
+    node: any,
+    parentScope: Scope,
+    visitorOverrides?: Visitors,
+  ) => Processed
 }
 
 const VISITORS: Visitors = {
-  SourceFile: (sourceFile: ts.SourceFile) => {
-    const {nodes, errors} = translateTsAstToBashAst(
-      sourceFile.statements,
-      new Scope({name: 'File'}),
-    )
+  SourceFile: (sourceFile: ts.SourceFile, parentScope, visitorOverrides) => {
+    const {nodes, errors} = translateTsAstToBashAst({
+      tsNodes: sourceFile.statements,
+      scope: parentScope,
+      visitorOverrides,
+    })
     return {
       result: {
         nodes: [
@@ -223,12 +308,21 @@ const VISITORS: Visitors = {
   ExpressionStatement: (
     expressionStatement: ExpressionStatement,
     scope: Scope,
+    visitorOverrides,
   ) => {
     // return translateTsAstToBashAst([expressionStatement], scope)
-    return processTsNode(expressionStatement.expression, scope)
+    return processTsNode({
+      node: expressionStatement.expression,
+      scope: scope,
+      visitorOverrides,
+    })
   },
 
-  CallExpression: (callExpression: CallExpression, scope: Scope): Processed => {
+  CallExpression: (
+    callExpression: CallExpression,
+    parentScope: Scope,
+    visitorOverrides,
+  ): Processed => {
     const nodes: Bash.AllBashASTNodes[] = []
     const scopeInfo: IdentifierLookup[] = []
     const errors: any[] = []
@@ -268,10 +362,11 @@ const VISITORS: Visitors = {
         //     ],
         //   }
         // }
-        const {nodes: processedArgs, errors} = translateTsAstToBashAst(
-          args,
-          scope,
-        )
+        const {nodes: processedArgs, errors} = translateTsAstToBashAst({
+          tsNodes: args,
+          scope: scope,
+          visitorOverrides,
+        })
         if (lookup.lookupKind === 'IMPORTED_FUNCTION') {
           const callExpression: Bash.CallExpression = {
             type: 'CallExpression',
@@ -369,19 +464,37 @@ const VISITORS: Visitors = {
     }
   },
 
-  VariableStatement: (statement: ts.VariableStatement, scope) => {
+  VariableStatement: (
+    statement: ts.VariableStatement,
+    parentScope,
+    visitorOverrides,
+  ) => {
     const {declarationList} = statement
     return {
-      result: translateTsAstToBashAst(declarationList.declarations, scope),
+      result: translateTsAstToBashAst({
+        tsNodes: declarationList.declarations,
+        scope: parentScope,
+        visitorOverrides,
+      }),
     }
   },
 
-  VariableDeclaration: (declaration: ts.VariableDeclaration, scope) => {
+  VariableDeclaration: (
+    declaration: ts.VariableDeclaration,
+    parentScope,
+    visitorOverrides,
+  ) => {
     const {name: nameIdentifier, initializer} = declaration
     const {
       nodes: initializerNodes = [],
       errors: initializerErrors = [],
-    } = initializer ? translateTsAstToBashAst([initializer], scope) : {}
+    } = initializer
+      ? translateTsAstToBashAst({
+          tsNodes: [initializer],
+          scope: parentScope,
+          visitorOverrides,
+        })
+      : {}
     const errors = [...initializerErrors]
     const bashInitializer =
       initializerNodes.length === 0
@@ -427,7 +540,7 @@ const VISITORS: Visitors = {
         {
           name,
           lookupKind: 'VARIABLE',
-          scopeName: scope.name,
+          scopeName: parentScope.name,
         },
       ],
     }
@@ -436,6 +549,7 @@ const VISITORS: Visitors = {
   FunctionDeclaration: (
     functionDeclaration: ts.FunctionDeclaration,
     parentScope: Scope,
+    visitorOverrides,
   ): Processed => {
     const {name, body, parameters} = functionDeclaration
     const errors: any[] = []
@@ -453,34 +567,156 @@ const VISITORS: Visitors = {
     }
     if (!name || !body) return {result: {errors}}
     const fnName = name.text
+    const fnScope = new Scope({parentScope, name: fnName, type: 'FUNCTION'})
     return {
       result: (scope): Result => {
-        const bashParams = translateTsAstToBashAst(
-          parameters,
-          scope,
-          `Function:${fnName}`,
-        )
+        const bashParams = translateTsAstToBashAst({
+          tsNodes: parameters,
+          scope: fnScope,
+          visitorOverrides,
+        })
         // TODO: make this check more robust:
-        if (scope.name.includes('Function:')) {
-          return {
-            // nodes: [
-            //   {
-            //
-            //   }
-            // ]
-            errors: [
-              {
-                type: 'UnsupportedSyntax',
-                message: `Nesting functions is not supported yet.`,
-              },
-            ],
-          }
-        }
-        const bashStatements = translateTsAstToBashAst(
-          body.statements,
-          scope,
-          `Function:${fnName}`,
+        // if (scope.name.includes('Function:')) {
+        //   return {
+        //     // nodes: [
+        //     //   {
+        //     //
+        //     //   }
+        //     // ]
+        //     errors: [
+        //       {
+        //         type: 'UnsupportedSyntax',
+        //         message: `Nesting functions is not supported yet.`,
+        //       },
+        //     ],
+        //   }
+        // }
+        const bashStatements = translateTsAstToBashAst({
+          tsNodes: body.statements,
+          scope: fnScope,
+          visitorOverrides,
+          // visitorOverrides: {
+          //   ...visitorOverrides,
+          //   FunctionDeclaration: (innerDeclaration: ts.FunctionDeclaration, _parentScope, _this) => {
+          //
+          //   },
+          // }
+        })
+
+        const uniqByName = uniqBy<{name: string}, string>(({name}) => name)
+
+        const {nodes, statements} = (bashStatements.nodes ?? []).reduce<{
+          statements: AllBashASTNodes[]
+          nodes: AllBashASTNodes[]
+        }>(
+          ({statements, nodes}, statement) => {
+            if (statement.type !== 'FunctionDeclaration')
+              return {
+                statements: [...statements, statement],
+                nodes,
+              }
+
+            const subFnName = statement.name.name
+            // traverse all children (deep) to find all VariableIdentifiers except those inside other Functions
+            const children = getChildrenRecursively(statement)
+            const referencedScopedIdentifiers = uniqByName(
+              children.filter(
+                (
+                  child,
+                ): child is Bash.VariableIdentifier | Bash.FunctionIdentifier =>
+                  (child.type === 'VariableIdentifier' ||
+                    child.type === 'FunctionIdentifier') &&
+                  // TODO: refactor scopeName to real scope with a 'scopeType' or keep depth or something
+                  fnScope.has(child.name, true) &&
+                  // skip references to self
+                  child.name !== subFnName,
+              ),
+            )
+            return {
+              nodes: [...nodes, statement],
+              statements: [
+                ...statements,
+                {
+                  type: 'VariableDeclaration',
+                  identifier: {
+                    type: 'VariableIdentifier',
+                    name: '__declaration',
+                  },
+                  initializer: {
+                    type: 'ArrayLiteral',
+                    elements: [
+                      {
+                        type: 'StringLiteral',
+                        style: 'SINGLE_QUOTED',
+                        value: 'function',
+                      },
+                      {
+                        type: 'StringLiteral',
+                        style: 'SINGLE_QUOTED',
+                        value: `${fnName}.${subFnName}`,
+                      },
+                      ...referencedScopedIdentifiers.map((identifier) => ({
+                        type: 'TemplateLiteral',
+                        expressions: [
+                          {
+                            type: 'CallReference',
+                            expression: {
+                              type: 'CallExpression',
+                              callee: {
+                                type: 'FunctionIdentifier',
+                                name: 'declare',
+                              },
+                              args: [
+                                {
+                                  type: 'StringLiteral',
+                                  style: 'SINGLE_QUOTED',
+                                  value: '-p',
+                                },
+                                {
+                                  type: 'StringLiteral',
+                                  style: 'SINGLE_QUOTED',
+                                  value: identifier.name,
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                        quasis: [
+                          {
+                            type: 'TemplateElement',
+                            value: '',
+                          },
+                          {
+                            type: 'TemplateElement',
+                            value: '',
+                          },
+                        ],
+                      })),
+                    ],
+                  },
+                } as Bash.VariableDeclaration,
+              ],
+            }
+          },
+          {statements: [], nodes: []} as {
+            statements: Bash.FunctionBodyExpression[]
+            nodes: AllBashASTNodes[]
+          },
         )
+
+        const nestedFunctionDeclarations = (bashStatements.nodes ?? []).filter(
+          (statement) => statement.type === 'FunctionDeclaration',
+        )
+
+        // translate the nested function definitions:
+        const bashStatementNodes = (bashStatements.nodes ?? []).map(
+          (statement) => {
+            if (statement.type !== 'FunctionDeclaration') {
+              return statement
+            }
+          },
+        )
+
         return {
           nodes: [
             {
@@ -491,9 +727,9 @@ const VISITORS: Visitors = {
               },
               parameters: (bashParams.nodes ?? []) as Bash.Parameter[],
               // TODO: need to handle
-              statements: (bashStatements.nodes ??
-                []) as Bash.FunctionBodyExpression[],
+              statements: bashStatementNodes as Bash.FunctionBodyExpression[],
             },
+            ...nestedFunctionDeclarations,
           ],
           errors: [
             ...(bashParams.errors ?? []),
@@ -508,6 +744,35 @@ const VISITORS: Visitors = {
           lookupKind: 'FUNCTION',
         },
       ],
+    }
+  },
+
+  Identifier: (identifier: ts.Identifier, parentScope) => {
+    return {
+      result: (scope) => {
+        const lookup = scope.get(identifier.text)
+        if (!lookup) {
+          return {
+            errors: [
+              {
+                type: 'ReferenceError',
+                message: `Unable to find '${identifier.text}' in scope.`,
+              },
+            ],
+          }
+        }
+        return {
+          nodes: [
+            {
+              type:
+                lookup.lookupKind === 'VARIABLE'
+                  ? 'VariableIdentifier'
+                  : 'FunctionIdentifier',
+              name: lookup.name,
+            },
+          ],
+        }
+      },
     }
   },
 
@@ -534,11 +799,17 @@ function unimplementedVisitor(node: ts.Node): Processed {
 }
 // .filter(([key, value]) => !Number.isNaN(Number(key)))
 
-export function processTsNode(
-  node: ts.Node,
-  scope: Scope,
-  visitorOverrides: Visitors = {},
-): Processed {
+interface ProcessTsNodeParams {
+  node: ts.Node
+  scope: Scope
+  visitorOverrides?: Visitors
+}
+
+export function processTsNode({
+  node,
+  scope,
+  visitorOverrides = {},
+}: ProcessTsNodeParams): Processed {
   const syntaxKind = SyntaxKind[node.kind]
   const visitor = visitorOverrides[syntaxKind] ?? VISITORS[syntaxKind]
   if (!visitor) {

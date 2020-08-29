@@ -342,6 +342,26 @@ export function write(node: AllBashASTNodes, indentation = 0) {
   return writer(node, indentation)
 }
 
+export function getChildren(node: AllBashASTNodes) {
+  const values = Object.values(node)
+  const children: AllBashASTNodes[] = values
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .filter((value) => typeof value === 'object' && 'type' in value)
+  return children
+}
+
+export function getChildrenRecursively(
+  node: AllBashASTNodes,
+  skip: AllBashASTNodes['type'][] = [],
+): AllBashASTNodes[] {
+  return getChildren(node).flatMap((child) => [
+    child,
+    ...getChildrenRecursively(child, skip).filter(
+      (grandChild) => !skip.includes(grandChild.type),
+    ),
+  ])
+}
+
 // NOTE: maybe it could be using 'typescript' directly as a TS plugin?
 // then we could also add red squiggly marks for not implemented features, by node type in a given position!
 // https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin
