@@ -9,7 +9,7 @@ export const initLeft = (
   updateLeft: (untranspiled: string) => void,
 ) => {
   if (monaco) {
-    if (initialValue) monaco.getModel().setValue(initialValue)
+    if (initialValue) monaco.getModel()!.setValue(initialValue)
     return monaco
   }
 
@@ -29,7 +29,7 @@ export const initLeft = (
     monaco.layout()
   })
 
-  const monacoModel = monaco.getModel()
+  const monacoModel = monaco.getModel()!
 
   monacoModel.onDidChangeContent(() => {
     updateLeft(monacoModel.getValue())

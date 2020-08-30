@@ -6,7 +6,7 @@ let monaco: Monaco.editor.IStandaloneCodeEditor
 
 export const initRight = (initialValue: string | undefined) => {
   if (monaco) {
-    if (initialValue) monaco.getModel().setValue(initialValue)
+    if (initialValue) monaco.getModel()!.setValue(initialValue)
     return monaco
   }
 

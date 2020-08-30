@@ -1,10 +1,9 @@
-import {transpile} from './transpile'
-import {makeTestFile} from './util/test-util'
+import {transpileCode} from './transpile'
 
 describe('transpile', () => {
   test('a larger program', () => {
     // language=TypeScript
-    const file = makeTestFile(`
+    const code = `
 import {write} from './util'
 
 write('hello')
@@ -27,10 +26,22 @@ function nestedFunctions() {
     echo('hello')
   }
 }
-    `)
+    `
 
-    expect(
-      transpile(file)
-    ).toMatchSnapshot()
+    expect(transpileCode(code)).toMatchInlineSnapshot(`
+      "@fromModule ./util write hello
+      declare -i x=123
+      function lol {
+        echo x
+        echo hmm
+      }
+      function nestedFunctions {
+        echo hi
+        declare -a __declaration=(function nestedFunctions.nestedOne)
+      }
+      function nestedFunctions.nestedOne {
+        echo hello
+      }"
+    `)
   })
 })
