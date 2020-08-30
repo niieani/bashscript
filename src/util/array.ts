@@ -26,10 +26,7 @@ export const combineAlternate = <T, Y>(
 export const findLastIndex = <T>(
   predicate: (value: T, index: number, obj: T[]) => boolean,
 ) => (arr: ReadonlyArray<T>) => {
-  const result = arr
-    .slice()
-    .reverse()
-    .findIndex(predicate)
+  const result = arr.slice().reverse().findIndex(predicate)
   return result >= 0 ? arr.length - 1 - result : result
 }
 

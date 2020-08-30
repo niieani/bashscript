@@ -3,7 +3,7 @@ import {write} from './util'
 write('hello')
 
 // this won't work yet:
-const x = 123;
+const x = 123
 
 // I'm a comment
 /* I'm a multiline comment
@@ -17,7 +17,19 @@ function lol(one: string, two: number) {
 
 function nestedFunctions() {
   echo('hi')
-  function nestedOne() {
-    echo('hello')
+  let x = 1
+  function nestedOne(a: number) {
+    echo('hello', x)
+  }
+  return nestedOne
+}
+
+const arrowFn = () => {
+  echo('hmm')
+  return () => {
+    echo('lool')
   }
 }
+
+const theNestedOne = nestedFunctions()
+theNestedOne(123)

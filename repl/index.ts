@@ -11,7 +11,6 @@ const init = async () => {
   const [{initLeft}, {initRight}, {transpileText}] = await Promise.all([
     import('./monaco'),
     import('./monaco-right'),
-    // import('./codemirror'),
     import('./transpile'),
   ])
 
@@ -25,8 +24,9 @@ const init = async () => {
   }
 
   const leftEditor = initLeft(originValue, updateRight)
-  if (module.hot && !transpiledValue)
-    updateRight(leftEditor.getModel().getValue())
+  if (module.hot && !transpiledValue) {
+    updateRight(leftEditor.getModel()!.getValue())
+  }
 }
 
 init()
